@@ -21,17 +21,26 @@ body{font-family:'Syne',sans-serif;background:#121213;color:#ffffff;padding:1.5r
 #chain-bar{height:36px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;position:relative}
 #chain-display{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#818384;letter-spacing:1px;transition:all 0.2s}
 #chain-display.active{color:#c9b458}
-#word-zone{background:#1a1a1b;border:2px solid #3a3a3c;border-radius:12px;min-height:90px;display:flex;align-items:center;justify-content:center;gap:6px;padding:1rem;margin-bottom:0.75rem;flex-wrap:wrap;transition:border-color 0.2s,background 0.2s}
+#word-zone{background:#1a1a1b;border:2px solid #3a3a3c;border-radius:12px;min-height:80px;display:flex;align-items:center;justify-content:center;gap:4px;padding:0.6rem;margin-bottom:0.75rem;flex-wrap:nowrap;transition:border-color 0.2s,background 0.2s;overflow:hidden}
 #word-zone.drag-over{border-color:#538d4e;background:#1f2b1e}
 #word-zone.correct{border-color:#538d4e;background:#1f2b1e}
 #word-zone.broken{border-color:#b59f3b;background:#2b2510}
-.word-letter{width:48px;height:56px;background:#121213;border:2px solid #3a3a3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:'Space Mono',monospace;user-select:none;flex-shrink:0;transition:transform 0.15s;color:#fff;text-transform:uppercase}
+.word-letter{width:48px;height:56px;background:#121213;border:2px solid #3a3a3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:'Space Mono',monospace;user-select:none;flex-shrink:0;transition:width 0.2s,height 0.2s,font-size 0.2s,transform 0.15s;color:#fff;text-transform:uppercase}
 .word-letter.base-letter{background:#121213;border:2px solid #b59f3b;color:#c9b458}
 .word-letter.added-letter{cursor:grab;border-color:#538d4e;color:#fff}
 .word-letter.added-letter:hover{transform:translateY(-2px);background:#1f2b1e}
 .word-letter.added-letter.dragging{opacity:0.4;transform:scale(0.95)}
-.gap-indicator{width:4px;height:56px;background:transparent;flex-shrink:0;border-radius:4px;transition:width 0.15s ease,background 0.15s ease}
-.gap-indicator.open{width:50px;background:#538d4e44}
+.gap-indicator{width:4px;height:56px;background:transparent;flex-shrink:0;border-radius:4px;transition:width 0.15s ease,height 0.2s,background 0.15s ease}
+.gap-indicator.open{width:44px;background:#538d4e44}
+/* Tile sizing by word length */
+#word-zone.len-s  .word-letter{width:48px;height:56px;font-size:22px}
+#word-zone.len-s  .gap-indicator.open{width:44px}
+#word-zone.len-m  .word-letter{width:40px;height:50px;font-size:18px}
+#word-zone.len-m  .gap-indicator.open{width:36px}
+#word-zone.len-l  .word-letter{width:32px;height:42px;font-size:14px}
+#word-zone.len-l  .gap-indicator.open{width:28px}
+#word-zone.len-xl .word-letter{width:26px;height:36px;font-size:11px}
+#word-zone.len-xl .gap-indicator.open{width:22px}
 #trash-zone{display:none}
 #word-hint{font-size:14px;color:#818384;text-align:center;min-height:22px;margin-bottom:0.75rem;font-family:'Space Mono',monospace;transition:all 0.15s}
 #word-hint.success{color:#538d4e;font-weight:700}
@@ -187,8 +196,18 @@ function closeAllGaps(){
 }
 
 // ── Render word with invisible gap indicators between tiles ───────────────
+function updateSizeClass(){
+  const z=document.getElementById("word-zone");
+  const n=letters.length;
+  z.classList.remove("len-s","len-m","len-l","len-xl");
+  if(n<=5)z.classList.add("len-s");
+  else if(n<=7)z.classList.add("len-m");
+  else if(n<=9)z.classList.add("len-l");
+  else z.classList.add("len-xl");
+}
 function renderWord(){
   const z=document.getElementById("word-zone");z.innerHTML="";
+  updateSizeClass();
   // gap before first letter
   const mkGap=()=>{const g=document.createElement("div");g.className="gap-indicator";return g;};
   z.appendChild(mkGap());
