@@ -1,6 +1,6 @@
 {
-  "name": "Letter Drop",
-  "short_name": "Letter Drop",
+  "name": "Droplet",
+  "short_name": "Droplet",
   "description": "Build words by dragging letters. Score points and chain bonuses!",
   "start_url": "./letter_drop.html",
   "display": "standalone",
