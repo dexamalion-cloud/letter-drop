@@ -1,5 +1,10 @@
-const CACHE = 'letter-drop-v1';
-const FILES = ['./letter_drop.html', './manifest.json'];
+const CACHE = 'droplet-v2';
+const FILES = [
+  'https://dexamalion-cloud.github.io/letter-drop/letter_drop.html',
+  'https://dexamalion-cloud.github.io/letter-drop/manifest.json',
+  'https://dexamalion-cloud.github.io/letter-drop/icon-192.png',
+  'https://dexamalion-cloud.github.io/letter-drop/icon-512.png'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(

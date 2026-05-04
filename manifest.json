@@ -2,23 +2,37 @@
   "name": "Droplet",
   "short_name": "Droplet",
   "description": "Build words by dragging letters. Score points and chain bonuses!",
-  "start_url": "./letter_drop.html",
+  "start_url": "https://dexamalion-cloud.github.io/letter-drop/letter_drop.html",
+  "scope": "https://dexamalion-cloud.github.io/letter-drop/",
   "display": "standalone",
-  "background_color": "#121213",
-  "theme_color": "#121213",
+  "background_color": "#0B1A0E",
+  "theme_color": "#0B1A0E",
   "orientation": "portrait",
+  "lang": "en",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
