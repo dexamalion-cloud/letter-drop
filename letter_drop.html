@@ -311,7 +311,26 @@ let timerInterval=null,timeLeft=90,gameActive=false;
 let chain=0,addedCount=0,lastWasValid=false;
 let hoverIdx=null; // which gap is currently open
 
-function pickBase(){const c1=pickConsonant();let c2;do{c2=pickConsonant();}while(c2===c1);const v=VOWELS[Math.floor(Math.random()*VOWELS.length)];return[c1,v,c2];}
+function pickBase(){
+  const c1=pickConsonant();
+  let c2;
+  const c1is3pt=CONSONANTS_3PT.includes(c1);
+  const c1is2pt=CONSONANTS_2PT.includes(c1);
+  let attempts=0;
+  do{
+    c2=pickConsonant();
+    attempts++;
+    // If c1 is 3pt, c2 must be 1pt
+    if(c1is3pt&&!CONSONANTS_1PT.includes(c2))continue;
+    // If c1 is 2pt, c2 must not also be 2pt or 3pt
+    if(c1is2pt&&(CONSONANTS_2PT.includes(c2)||CONSONANTS_3PT.includes(c2)))continue;
+    // No duplicates
+    if(c2===c1)continue;
+    break;
+  }while(attempts<20);
+  const v=VOWELS[Math.floor(Math.random()*VOWELS.length)];
+  return[c1,v,c2];
+}
 function initWord(){letters=[...base];isBase=[true,true,true];isLocked=[false,false,false];addedCount=0;}
 
 function updateChainDisplay(){
