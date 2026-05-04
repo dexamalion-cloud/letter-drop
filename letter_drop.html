@@ -75,6 +75,9 @@ html{overscroll-behavior:none}
 #chain-display.active{color:#F39C12}
 @keyframes chainBump{0%{transform:scale(1)}30%{transform:scale(1.35)}60%{transform:scale(0.92)}100%{transform:scale(1)}}
 #chain-display.bump{animation:chainBump 0.35s cubic-bezier(0.36,0.07,0.19,0.97)}
+#word-display{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;text-align:center;color:#A9DFBF;letter-spacing:2px;min-height:32px;margin-bottom:0.4rem;text-transform:uppercase;transition:color 0.2s}
+#word-display.success{color:#27AE60}
+#word-display.broken{color:#E74C3C}
 #word-zone{touch-action:none;background:#14311A;border:2px solid #1E5631;border-radius:12px;min-height:80px;display:flex;align-items:center;justify-content:center;gap:4px;padding:0.6rem;margin-bottom:0.75rem;flex-wrap:nowrap;transition:border-color 0.2s,background 0.2s;overflow:hidden}
 #word-zone.drag-over{border-color:#27AE60;background:#14311A}
 #word-zone.correct{border-color:#27AE60;background:#14311A}
@@ -215,6 +218,7 @@ html{overscroll-behavior:none}
   </div>
 </div>
 <div id="chain-bar"><div id="chain-display">chain: 0</div></div>
+<div id="word-display"></div>
 <div id="word-zone"></div>
 <div id="word-hint"></div>
 <div id="trash-zone" class="hidden"></div>
@@ -271,7 +275,7 @@ html{overscroll-behavior:none}
     <div class="score-section-title">Tough Letter Bonus</div>
     <div class="score-rule">
       <div><div class="score-rule-label">J, X, Q or Z in word</div><div class="score-rule-desc">🔥 Per tough letter used</div></div>
-      <div class="score-rule-pts">+2</div>
+      <div class="score-rule-pts">+3</div>
     </div>
 
     <div class="score-section-title">Timer</div>
@@ -346,7 +350,7 @@ function autoCheck(){
   const z=document.getElementById("word-zone");
   z.classList.remove("correct","broken");
   if(w.length<2){showHint("drag letters from the keyboard into the word","");return;}
-  if(used.has(w)){showHint('"'+w+'" already scored',"");return;}
+  if(used.has(w)){showHint("already scored","");return;}
   addedCount=isBase.filter(b=>!b).length;
   if(W.has(w)&&addedCount===0){
     showHint(w+" \u2014 add a letter to score","");
@@ -355,11 +359,12 @@ function autoCheck(){
     const lengthBonus=w.length>9?3:w.length>6?1:0;
     const toughLetters=/[jxqz]/g;
     const toughCount=(w.match(toughLetters)||[]).length;
-    const toughBonus=toughCount*2;
+    const toughBonus=toughCount*3;
     const points=(isChainBonus?1+(addedCount*2):1)+lengthBonus+toughBonus;
     score+=points;
     document.getElementById("score-value").textContent=score;
     used.add(w);z.classList.add("correct");lastWasValid=true;
+      const _wd=document.getElementById("word-display");if(_wd){_wd.className="success";setTimeout(()=>{if(_wd)_wd.className="";},600);}
     if(isChainBonus){
       chain++;updateChainDisplay();
       const cd=document.getElementById("chain-display");
@@ -372,7 +377,7 @@ function autoCheck(){
     }else{
       chain=1;updateChainDisplay();
       const lenMsg=w.length>9?" \u26A1+3 long word!":w.length>6?" \u2B50+1 long word!":"";
-      const toughMsg=toughBonus>0?" \uD83D\uDD25+"+toughBonus+" tough letter"+(toughBonus>2?"s":"")+"!":"";
+      const toughMsg=toughBonus>0?" \uD83D\uDD25+"+toughBonus+" tough letter"+(toughBonus>3?"s":"")+"!":"";
       showHint("+"+points+(points>1?" points":" point")+" \u2014 \""+w+"\""+lenMsg+toughMsg,"success");
       addPill(w,false);
       z.animate([{transform:"scale(1)"},{transform:"scale(1.02)"},{transform:"scale(1)"}],{duration:250});
@@ -436,6 +441,12 @@ function updateSizeClass(){
 function renderWord(){
   const z=document.getElementById("word-zone");z.innerHTML="";
   updateSizeClass();
+  // Update large word display
+  const wd=document.getElementById("word-display");
+  if(wd){
+    wd.textContent=letters.join("").toLowerCase()||"";
+    wd.className="";
+  }
   // gap before first letter
   const mkGap=()=>{const g=document.createElement("div");g.className="gap-indicator";return g;};
   z.appendChild(mkGap());
