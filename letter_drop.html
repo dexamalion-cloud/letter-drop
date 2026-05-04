@@ -14,7 +14,8 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Syne',sans-serif;background:#0B1A0E;color:#ffffff;padding:1.5rem 1rem 2rem}
+body{font-family:'Syne',sans-serif;background:#0B1A0E;color:#ffffff;padding:1.5rem 1rem 2rem;overscroll-behavior:none;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+html{overscroll-behavior:none}
 #header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem}
 #game-logo{max-width:230px}
 #header-right{display:flex;align-items:flex-end;gap:20px}
@@ -74,7 +75,7 @@ body{font-family:'Syne',sans-serif;background:#0B1A0E;color:#ffffff;padding:1.5r
 #chain-display.active{color:#F39C12}
 @keyframes chainBump{0%{transform:scale(1)}30%{transform:scale(1.35)}60%{transform:scale(0.92)}100%{transform:scale(1)}}
 #chain-display.bump{animation:chainBump 0.35s cubic-bezier(0.36,0.07,0.19,0.97)}
-#word-zone{background:#14311A;border:2px solid #1E5631;border-radius:12px;min-height:80px;display:flex;align-items:center;justify-content:center;gap:4px;padding:0.6rem;margin-bottom:0.75rem;flex-wrap:nowrap;transition:border-color 0.2s,background 0.2s;overflow:hidden}
+#word-zone{touch-action:none;background:#14311A;border:2px solid #1E5631;border-radius:12px;min-height:80px;display:flex;align-items:center;justify-content:center;gap:4px;padding:0.6rem;margin-bottom:0.75rem;flex-wrap:nowrap;transition:border-color 0.2s,background 0.2s;overflow:hidden}
 #word-zone.drag-over{border-color:#27AE60;background:#14311A}
 #word-zone.correct{border-color:#27AE60;background:#14311A}
 #word-zone.broken{border-color:#6BBF94;background:#14311A}
@@ -107,7 +108,7 @@ body{font-family:'Syne',sans-serif;background:#0B1A0E;color:#ffffff;padding:1.5r
 .action-btn.danger:hover{background:#14311A}
 #kbd-label{font-size:11px;color:#1E8449;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:0.75rem;margin-top:0.5rem}
 .kbd-row{display:flex;justify-content:center;gap:4px;margin-bottom:4px}
-.key{width:34px;height:40px;background:#1E8449;border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Space Mono',monospace;cursor:grab;user-select:none;transition:transform 0.12s,background 0.12s;flex-shrink:0;color:#fff;text-transform:uppercase}
+.key{touch-action:none;width:34px;height:40px;background:#1E8449;border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Space Mono',monospace;cursor:grab;user-select:none;transition:transform 0.12s,background 0.12s;flex-shrink:0;color:#fff;text-transform:uppercase}
 .key.wide{width:50px;font-size:11px}
 .key:hover{transform:translateY(-3px);background:#27AE60}
 .key.dragging{opacity:0.5;transform:scale(0.9)}
@@ -748,6 +749,18 @@ document.getElementById("new-game-btn").addEventListener("click",newGame);
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
+// Prevent browser swipe navigation interfering with drag gestures
+document.addEventListener('touchstart', e=>{
+  if(e.touches.length===1){
+    const x=e.touches[0].clientX;
+    // Block edge swipes (within 20px of either edge)
+    if(x<20||x>window.innerWidth-20) e.preventDefault();
+  }
+},{passive:false});
+// Prevent pull-to-refresh
+document.addEventListener('touchmove', e=>{
+  if(e.touches.length===1) e.preventDefault();
+},{passive:false});
 </script>
 </body>
 </html>
