@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Droplet Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#0A0F14;color:#fff;min-height:100vh}
+  #login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:1rem}
+  #login h1{font-size:28px;color:#85C1E9}
+  #login input{padding:12px 20px;border-radius:8px;border:1px solid #1B3A4B;background:#0E1C2A;color:#fff;font-size:16px;width:260px;text-align:center}
+  #login button{padding:12px 32px;background:#2980B9;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer}
+  #login button:hover{background:#3A9FD4}
+  #dashboard{display:none;padding:1.5rem}
+  .dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+  .dash-title{font-size:22px;font-weight:800;color:#85C1E9}
+  .refresh-btn{padding:8px 18px;background:#1B3A4B;color:#85C1E9;border:1px solid #2980B9;border-radius:6px;cursor:pointer;font-size:13px}
+  .refresh-btn:hover{background:#2980B9;color:#fff}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .stat-card{background:#0E1C2A;border:1px solid #1B3A4B;border-radius:12px;padding:1.25rem;text-align:center}
+  .stat-value{font-size:36px;font-weight:800;color:#1ABC9C;font-family:'Courier New',monospace;line-height:1}
+  .stat-label{font-size:12px;color:#2980B9;text-transform:uppercase;letter-spacing:1px;margin-top:6px}
+  .stat-sub{font-size:11px;color:#1B3A4B;margin-top:4px}
+  .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .chart-card{background:#0E1C2A;border:1px solid #1B3A4B;border-radius:12px;padding:1.25rem}
+  .chart-title{font-size:13px;font-weight:700;color:#85C1E9;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem}
+  .table-card{background:#0E1C2A;border:1px solid #1B3A4B;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+  .table-title{font-size:13px;font-weight:700;color:#85C1E9;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{color:#2980B9;text-align:left;padding:8px 10px;border-bottom:1px solid #1B3A4B;font-weight:600}
+  td{padding:8px 10px;border-bottom:1px solid #0A0F14;color:#fff}
+  tr:hover td{background:#1B3A4B22}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+  .badge-gold{background:#F0B42922;color:#F0B429;border:1px solid #F0B42966}
+  .badge-mobile{background:#2980B922;color:#85C1E9;border:1px solid #2980B966}
+  .badge-desktop{background:#1ABC9C22;color:#1ABC9C;border:1px solid #1ABC9C66}
+  .loading{color:#2980B9;font-size:13px;padding:1rem 0}
+  #last-updated{font-size:11px;color:#1B3A4B}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h1>💧 Droplet Admin</h1>
+  <input type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPw()">
+  <button onclick="checkPw()">Sign In</button>
+  <div id="pw-error" style="color:#E74C3C;font-size:13px;min-height:20px"></div>
+</div>
+
+<div id="dashboard">
+  <div class="dash-header">
+    <div class="dash-title">💧 Droplet Analytics</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="last-updated"></span>
+      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="s-dau">—</div><div class="stat-label">Today's DAU</div></div>
+    <div class="stat-card"><div class="stat-value" id="s-total-users">—</div><div class="stat-label">Total Users</div></div>
+    <div class="stat-card"><div class="stat-value" id="s-games-today">—</div><div class="stat-label">Games Today</div></div>
+    <div class="stat-card"><div class="stat-value" id="s-total-games">—</div><div class="stat-label">Total Games</div></div>
+    <div class="stat-card"><div class="stat-value" id="s-avg-score">—</div><div class="stat-label">Avg Score</div><div class="stat-sub">all time</div></div>
+    <div class="stat-card"><div class="stat-value" id="s-top-score">—</div><div class="stat-label">Top Score</div><div class="stat-sub" id="s-top-score-sub"></div></div>
+    <div class="stat-card"><div class="stat-value" id="s-games-per-user">—</div><div class="stat-label">Games / User</div><div class="stat-sub">today</div></div>
+    <div class="stat-card"><div class="stat-value" id="s-mobile-pct">—</div><div class="stat-label">Mobile %</div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">DAU — Last 14 Days</div>
+      <canvas id="chart-dau" height="180"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Score Distribution</div>
+      <canvas id="chart-scores" height="180"></canvas>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title">🏆 Top 20 Scores (All Time)</div>
+    <table>
+      <thead><tr><th>#</th><th>Score</th><th>Base</th><th>Top Word</th><th>Date</th><th>Device</th></tr></thead>
+      <tbody id="tbl-topscores"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title">🎲 Most Common Base Letter Combos</div>
+    <table>
+      <thead><tr><th>Base Letters</th><th>Times Played</th><th>Avg Score</th></tr></thead>
+      <tbody id="tbl-bases"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title">📅 Daily Summary</div>
+    <table>
+      <thead><tr><th>Date</th><th>DAU</th><th>Games</th><th>Avg Score</th></tr></thead>
+      <tbody id="tbl-daily"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCuVqYaV7r04ZkUsNU-zFS9eCMQFitYheM",
+  authDomain: "droplet-stats-7112c.firebaseapp.com",
+  projectId: "droplet-stats-7112c",
+  storageBucket: "droplet-stats-7112c.firebasestorage.app",
+  messagingSenderId: "724486498795",
+  appId: "1:724486498795:web:89e657469f70ba70f791ae"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const today = new Date().toISOString().slice(0,10);
+
+// Simple password check
+const ADMIN_PW = 'droplet2025';
+window.checkPw = function(){
+  const pw = document.getElementById('pw-input').value;
+  if(pw === ADMIN_PW){
+    document.getElementById('login').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    loadAll();
+  } else {
+    document.getElementById('pw-error').textContent='Incorrect password';
+  }
+};
+
+function set(id, val){ const el=document.getElementById(id); if(el) el.textContent=val; }
+
+window.loadAll = async function(){
+  document.getElementById('last-updated').textContent='Loading…';
+  await Promise.all([loadDAU(), loadGames(), loadTopScores(), loadBases(), loadDailyStats()]);
+  document.getElementById('last-updated').textContent='Updated: '+new Date().toLocaleTimeString();
+};
+
+async function loadDAU(){
+  // Count unique users today
+  const snap = await getDocs(query(collection(db,'dau'), where('date','==',today)));
+  const dauCount = snap.size;
+  set('s-dau', dauCount);
+
+  // Total unique users ever
+  const usersSnap = await getDocs(collection(db,'users'));
+  set('s-total-users', usersSnap.size);
+
+  // Mobile %
+  let mobile=0;
+  snap.forEach(d=>{ if(d.data().device==='mobile') mobile++; });
+  set('s-mobile-pct', dauCount>0 ? Math.round(mobile/dauCount*100)+'%' : '—');
+
+  // Build 14-day DAU chart
+  const dauSnap = await getDocs(collection(db,'dau'));
+  const dauByDay = {};
+  dauSnap.forEach(d=>{
+    const date = d.data().date;
+    if(!dauByDay[date]) dauByDay[date]=new Set();
+    dauByDay[date].add(d.data().uid);
+  });
+  const last14 = [];
+  for(let i=13;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const key=d.toISOString().slice(0,10);
+    last14.push({date:key.slice(5), count:(dauByDay[key]||new Set()).size});
+  }
+  renderDAUChart(last14);
+}
+
+async function loadGames(){
+  const allSnap = await getDocs(collection(db,'games'));
+  let totalScore=0, totalGames=0, todayGames=0, todayUsers=new Set();
+  const scoreRanges = {0:0,1:0,2:0,3:0,4:0};
+  allSnap.forEach(d=>{
+    const g=d.data();
+    totalScore+=g.score||0; totalGames++;
+    if(g.date===today){ todayGames++; todayUsers.add(g.uid); }
+    const bucket=Math.min(4,Math.floor((g.score||0)/10));
+    scoreRanges[bucket]++;
+  });
+  set('s-total-games', totalGames);
+  set('s-games-today', todayGames);
+  set('s-avg-score', totalGames>0?Math.round(totalScore/totalGames):'—');
+  set('s-games-per-user', todayUsers.size>0?Math.round(todayGames/todayUsers.size*10)/10:'—');
+  renderScoreChart(scoreRanges, totalGames);
+}
+
+async function loadTopScores(){
+  const snap = await getDocs(query(collection(db,'topscores'),orderBy('score','desc'),limit(20)));
+  const tbody = document.getElementById('tbl-topscores');
+  if(snap.empty){tbody.innerHTML='<tr><td colspan="6" style="color:#2980B9">No games yet</td></tr>';return;}
+  let html='', rank=1, topScore=0, topSub='';
+  snap.forEach(d=>{
+    const g=d.data();
+    if(rank===1){topScore=g.score;topSub=g.baseLetters+' · '+g.date;}
+    const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+    const dev=g.device==='mobile'?'<span class="badge badge-mobile">📱</span>':'<span class="badge badge-desktop">🖥</span>';
+    html+=`<tr><td>${medal}</td><td style="color:#1ABC9C;font-weight:700">${g.score}</td><td style="color:#85C1E9;font-family:monospace">${g.baseLetters||'—'}</td><td>${g.topWord||'—'}</td><td style="color:#2980B9">${g.date||'—'}</td><td>${dev}</td></tr>`;
+    rank++;
+  });
+  tbody.innerHTML=html;
+  set('s-top-score', topScore||'—');
+  set('s-top-score-sub', topSub);
+}
+
+async function loadBases(){
+  const snap = await getDocs(collection(db,'games'));
+  const bases={};
+  snap.forEach(d=>{
+    const g=d.data();
+    const k=g.baseLetters||'???';
+    if(!bases[k]) bases[k]={count:0,totalScore:0};
+    bases[k].count++;
+    bases[k].totalScore+=g.score||0;
+  });
+  const sorted=Object.entries(bases).sort((a,b)=>b[1].count-a[1].count).slice(0,15);
+  const tbody=document.getElementById('tbl-bases');
+  if(!sorted.length){tbody.innerHTML='<tr><td colspan="3" style="color:#2980B9">No data yet</td></tr>';return;}
+  tbody.innerHTML=sorted.map(([k,v])=>
+    `<tr><td style="color:#85C1E9;font-family:monospace;font-size:16px;font-weight:700">${k}</td><td>${v.count}</td><td style="color:#1ABC9C">${Math.round(v.totalScore/v.count)}</td></tr>`
+  ).join('');
+}
+
+async function loadDailyStats(){
+  const dauSnap = await getDocs(collection(db,'dau'));
+  const gamesSnap = await getDocs(collection(db,'games'));
+  const dauByDay={}, gamesByDay={};
+  dauSnap.forEach(d=>{ const dt=d.data().date; if(!dauByDay[dt]) dauByDay[dt]=new Set(); dauByDay[dt].add(d.data().uid); });
+  gamesSnap.forEach(d=>{ const g=d.data(); const dt=g.date; if(!gamesByDay[dt]) gamesByDay[dt]={count:0,score:0}; gamesByDay[dt].count++; gamesByDay[dt].score+=g.score||0; });
+  const days=[...new Set([...Object.keys(dauByDay),...Object.keys(gamesByDay)])].sort().reverse().slice(0,14);
+  const tbody=document.getElementById('tbl-daily');
+  if(!days.length){tbody.innerHTML='<tr><td colspan="4" style="color:#2980B9">No data yet</td></tr>';return;}
+  tbody.innerHTML=days.map(d=>{
+    const dau=(dauByDay[d]||new Set()).size;
+    const games=gamesByDay[d]||{count:0,score:0};
+    const avg=games.count>0?Math.round(games.score/games.count):'—';
+    const isToday=d===today;
+    return `<tr><td style="color:${isToday?'#1ABC9C':'#fff'};font-weight:${isToday?700:400}">${d}${isToday?' ★':''}</td><td>${dau}</td><td>${games.count}</td><td style="color:#1ABC9C">${avg}</td></tr>`;
+  }).join('');
+}
+
+function renderDAUChart(data){
+  const ctx=document.getElementById('chart-dau');
+  if(ctx._chart) ctx._chart.destroy();
+  ctx._chart=new Chart(ctx,{type:'bar',data:{
+    labels:data.map(d=>d.date),
+    datasets:[{label:'DAU',data:data.map(d=>d.count),backgroundColor:'#2980B966',borderColor:'#2980B9',borderWidth:2,borderRadius:4}]
+  },options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#2980B9',font:{size:10}},grid:{color:'#1B3A4B44'}},y:{ticks:{color:'#2980B9',stepSize:1},grid:{color:'#1B3A4B44'},beginAtZero:true}}}});
+}
+
+function renderScoreChart(ranges, total){
+  const ctx=document.getElementById('chart-scores');
+  if(ctx._chart) ctx._chart.destroy();
+  const labels=['0–9','10–19','20–29','30–39','40+'];
+  ctx._chart=new Chart(ctx,{type:'doughnut',data:{
+    labels,
+    datasets:[{data:Object.values(ranges),backgroundColor:['#1B3A4B','#2980B9','#85C1E9','#1ABC9C','#F0B429'],borderWidth:0}]
+  },options:{responsive:true,plugins:{legend:{labels:{color:'#85C1E9',font:{size:11}}}}}});
+}
+</script>
+</body>
+</html>
