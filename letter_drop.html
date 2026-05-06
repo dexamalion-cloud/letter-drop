@@ -163,6 +163,25 @@ html{overscroll-behavior:none}
 #ad-gameover{width:100%;min-height:60px;margin-top:1rem;background:rgba(20,49,26,0.6);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .ad-placeholder{font-size:10px;color:#1B3A4B;font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;padding:8px}
 
+/* Water droplet animation */
+.water-drop{position:fixed;pointer-events:none;z-index:2998;width:10px;height:14px;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;background:linear-gradient(135deg,#85C1E9,#2980B9);opacity:0.9;filter:drop-shadow(0 0 4px #85C1E966)}
+.water-drop::after{content:'';position:absolute;top:2px;left:2px;width:3px;height:4px;background:rgba(255,255,255,0.5);border-radius:50%}
+@keyframes dropFall{
+  0%{transform:translate(-50%,-50%) scale(0.6);opacity:0}
+  15%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  85%{opacity:0.8}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0.4);opacity:0}
+}
+@keyframes dropSplash{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:0.8}
+  100%{transform:translate(calc(-50% + var(--sx)),calc(-50% + var(--sy))) scale(0);opacity:0}
+}
+.drop-splash-ring{position:fixed;pointer-events:none;z-index:2998;border:2px solid #85C1E9;border-radius:50%;width:6px;height:6px;opacity:0.8}
+@keyframes splashRing{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:0.8}
+  100%{transform:translate(-50%,-50%) scale(4);opacity:0}
+}
+
 /* Fish jump animation */
 .fish-jump{position:fixed;pointer-events:none;z-index:3000;font-size:28px;animation:fishArc 0.9s cubic-bezier(0.25,0.46,0.45,0.94) forwards}
 @keyframes fishArc{
@@ -208,7 +227,8 @@ async function trackDAU(){
     await setDoc(doc(db,'dau',today+'_'+uid),{
       uid, date:today, ts:serverTimestamp(), device: /Mobi/.test(navigator.userAgent)?'mobile':'desktop'
     },{merge:true});
-  } catch(e){}
+    console.log('[Droplet] DAU tracked:', uid, today);
+  } catch(e){ console.error('[Droplet] DAU error:', e); }
 }
 
 // Track a completed game
@@ -220,21 +240,20 @@ async function trackGame(score, wordsScored, baseLetters, topWord){
       topWord: topWord||'', wordCount: wordsScored,
       device: /Mobi/.test(navigator.userAgent)?'mobile':'desktop'
     });
-    // Update user aggregate
     await setDoc(doc(db,'users',uid),{
       uid, lastSeen:serverTimestamp(), date:today,
       totalGames: increment(1),
       totalScore: increment(score),
       device: /Mobi/.test(navigator.userAgent)?'mobile':'desktop'
     },{merge:true});
-    // Update daily aggregate
     await setDoc(doc(db,'daily',today),{
       date:today,
       totalGames: increment(1),
       totalScore: increment(score),
-      uniqueUsers: increment(0) // updated by DAU
+      uniqueUsers: increment(0)
     },{merge:true});
-  } catch(e){}
+    console.log('[Droplet] Game tracked:', {score, wordsScored, baseLetters: baseLetters.join(''), topWord});
+  } catch(e){ console.error('[Droplet] Game tracking error:', e); }
 }
 
 // Track high score word
@@ -258,6 +277,15 @@ trackDAU();
 // Expose to game
 window._dropletTrackGame = trackGame;
 window._dropletTrackHighScore = trackHighScore;
+
+// Flush any game that completed before Firebase was ready
+if(window._dropletPendingGame){
+  const p=window._dropletPendingGame;
+  window._dropletPendingGame=null;
+  trackGame(p.score,p.wordsScored,p.base,p.topWord);
+  if(p.score>0) trackHighScore(p.score,p.base);
+  console.log('[Droplet] Flushed pending game:', p.score);
+}
 </script>
 </head>
 <body>
@@ -479,6 +507,7 @@ function autoCheck(){
       showHint("+"+points+(points>1?" points":" point")+" \u2014 \""+w+"\""+(lengthBonus>0?(w.length>9?" \u26A1+3 long!":" \u2B50+1 long!"):"")+(toughBonus>0?" \uD83D\uDD25+"+toughBonus+" tough":""),"success");
       addPill(w,true);
       if(w.length>=7)setTimeout(()=>{launchFish(z);},80);
+      setTimeout(()=>{const uw=document.getElementById("used-words");launchDroplet(z,uw);},60);
       z.animate([{transform:"scale(1)"},{transform:"scale(1.03)"},{transform:"scale(1)"}],{duration:300});
     }else{
       chain=1;updateChainDisplay();
@@ -487,6 +516,7 @@ function autoCheck(){
       showHint("+"+points+(points>1?" points":" point")+" \u2014 \""+w+"\""+lenMsg+toughMsg,"success");
       addPill(w,false);
       if(w.length>=7)setTimeout(()=>{launchFish(z);},80);
+      setTimeout(()=>{const uw=document.getElementById("used-words");launchDroplet(z,uw);},60);
       z.animate([{transform:"scale(1)"},{transform:"scale(1.02)"},{transform:"scale(1)"}],{duration:250});
     }
     isLocked=isBase.map(()=>false);addedCount=0;
@@ -768,6 +798,73 @@ function launchFish(fromEl){
   }
 }
 
+function launchDroplet(fromEl, toEl){
+  const fromR=fromEl.getBoundingClientRect();
+  const toR=toEl?toEl.getBoundingClientRect():null;
+
+  const startX=fromR.left+fromR.width/2;
+  const startY=fromR.top+fromR.height/2;
+  const endX=toR?toR.left+toR.width/2:startX+(Math.random()-0.5)*40;
+  const endY=toR?toR.top+10:startY+200;
+
+  const dx=endX-startX;
+  const dy=endY-startY;
+
+  // Create the droplet
+  const drop=document.createElement("div");
+  drop.className="water-drop";
+  drop.style.left=startX+"px";
+  drop.style.top=startY+"px";
+  drop.style.setProperty("--dx", dx+"px");
+  drop.style.setProperty("--dy", dy+"px");
+  document.body.appendChild(drop);
+
+  // Animate along a slight arc using JS
+  const duration=600;
+  const start=performance.now();
+  function animDrop(now){
+    const t=Math.min(1,(now-start)/duration);
+    // Quadratic bezier with a slight outward arc
+    const cx=startX+dx*0.5+(Math.random()>0.5?30:-30)*(1-t);
+    const bx=(1-t)*(1-t)*startX+2*(1-t)*t*(startX+dx*0.3)+t*t*endX;
+    const by=(1-t)*(1-t)*startY+2*(1-t)*t*(startY-40)+t*t*endY;
+    drop.style.left=bx+"px";
+    drop.style.top=by+"px";
+    drop.style.opacity=t<0.1?t*10:t>0.85?(1-t)/0.15:1;
+    drop.style.transform=`translate(-50%,-50%) scaleY(${1+t*0.3}) scaleX(${1-t*0.1})`;
+    if(t<1){ requestAnimationFrame(animDrop); }
+    else {
+      drop.remove();
+      // Splash ring at destination
+      const ring=document.createElement("div");
+      ring.className="drop-splash-ring";
+      ring.style.left=endX+"px";
+      ring.style.top=endY+"px";
+      ring.style.animation="splashRing 0.4s ease-out forwards";
+      document.body.appendChild(ring);
+      setTimeout(()=>ring.remove(),450);
+      // Small splash droplets
+      const colors=["#85C1E9","#2980B9","#1ABC9C","#ffffff"];
+      for(let i=0;i<5;i++){
+        const s=document.createElement("div");
+        s.className="splash-drop";
+        s.style.left=endX+"px";
+        s.style.top=endY+"px";
+        const angle=((180+i*36)+Math.random()*20)*Math.PI/180;
+        const dist=8+Math.random()*12;
+        s.style.setProperty("--tx",Math.cos(angle)*dist+"px");
+        s.style.setProperty("--ty",Math.sin(angle)*dist+"px");
+        s.style.animationDuration=(0.25+Math.random()*0.15)+"s";
+        s.style.background=colors[Math.floor(Math.random()*colors.length)];
+        const sz=(2+Math.random()*3)+"px";s.style.width=sz;s.style.height=sz;
+        document.body.appendChild(s);
+        setTimeout(()=>s.remove(),500);
+      }
+    }
+  }
+  requestAnimationFrame(animDrop);
+}
+
 function buildKeyboard(){
   const kbd=document.getElementById("keyboard");kbd.innerHTML="";
   ROWS.forEach(row=>{const r=document.createElement("div");r.className="kbd-row";row.forEach(l=>{const k=document.createElement("div");k.className="key"+(l==="QU"?" wide":"");k.textContent=l;dragKey(k,l);r.appendChild(k);});kbd.appendChild(r);});
@@ -949,13 +1046,18 @@ endGame=function(){
   _origEndGame();
   checkMedalAndCelebrate(score);
   saveScore(score,base);
-  // Firebase tracking
+  // Firebase tracking — queue if module not ready
   try{
     const wordsScored=[...used].length;
     const topWord=[...used].sort((a,b)=>b.length-a.length)[0]||'';
-    if(window._dropletTrackGame) window._dropletTrackGame(score,wordsScored,base,topWord);
-    if(score>0&&window._dropletTrackHighScore) window._dropletTrackHighScore(score,base);
-  }catch(e){}
+    if(window._dropletTrackGame){
+      window._dropletTrackGame(score,wordsScored,base,topWord);
+      if(score>0&&window._dropletTrackHighScore) window._dropletTrackHighScore(score,base);
+    } else {
+      // Queue for when Firebase loads
+      window._dropletPendingGame={score,wordsScored,base,topWord};
+    }
+  }catch(e){ console.error('[Droplet] Hook error:',e); }
 };
 
 // Panel open/close
