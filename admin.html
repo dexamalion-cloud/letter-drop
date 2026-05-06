@@ -130,6 +130,7 @@ function checkPw(){
     document.getElementById('login').style.display='none';
     document.getElementById('dashboard').style.display='block';
     loadAll();
+    console.log('[Admin] Signed in, loading data...');
   } else {
     document.getElementById('pw-error').textContent='Incorrect password';
   }
@@ -139,11 +140,22 @@ function set(id, val){ const el=document.getElementById(id); if(el) el.textConte
 
 async function loadAll(){
   document.getElementById('last-updated').textContent='Loading…';
-  await Promise.all([loadDAU(), loadGames(), loadTopScores(), loadBases(), loadDailyStats()]);
-  document.getElementById('last-updated').textContent='Updated: '+new Date().toLocaleTimeString();
-};
+  const errEl=document.getElementById('error-msg');
+  if(errEl) errEl.style.display='none';
+  try{
+    console.log('[Admin] Starting data load...');
+    await Promise.all([loadDAU(), loadGames(), loadTopScores(), loadBases(), loadDailyStats()]);
+    document.getElementById('last-updated').textContent='Updated: '+new Date().toLocaleTimeString();
+    console.log('[Admin] All data loaded OK');
+  }catch(e){
+    console.error('[Admin] Load failed:', e);
+    document.getElementById('last-updated').textContent='Error loading data';
+    if(errEl){errEl.textContent='Error: '+e.message;errEl.style.display='block';}
+  }
+}
 
 async function loadDAU(){
+  console.log('[Admin] Loading DAU...');
   // Count unique users today
   const snap = await getDocs(query(collection(db,'dau'), where('date','==',today)));
   const dauCount = snap.size;
@@ -176,6 +188,7 @@ async function loadDAU(){
 }
 
 async function loadGames(){
+  console.log('[Admin] Loading games...');
   const allSnap = await getDocs(collection(db,'games'));
   let totalScore=0, totalGames=0, todayGames=0, todayUsers=new Set();
   const scoreRanges = {0:0,1:0,2:0,3:0,4:0};
@@ -194,6 +207,7 @@ async function loadGames(){
 }
 
 async function loadTopScores(){
+  console.log('[Admin] Loading top scores...');
   const snap = await getDocs(query(collection(db,'topscores'),orderBy('score','desc'),limit(20)));
   const tbody = document.getElementById('tbl-topscores');
   if(snap.empty){tbody.innerHTML='<tr><td colspan="6" style="color:#2980B9">No games yet</td></tr>';return;}
@@ -269,7 +283,7 @@ function renderScoreChart(ranges, total){
 // Wire up buttons inside the module scope
 document.getElementById('signin-btn').addEventListener('click', checkPw);
 document.getElementById('pw-input').addEventListener('keydown', e=>{ if(e.key==='Enter') checkPw(); });
-document.getElementById('refresh-btn').addEventListener('click', loadAll);
+document.getElementById('refresh-btn').addEventListener('click', ()=>loadAll());
 </script>
 </body>
 </html>
