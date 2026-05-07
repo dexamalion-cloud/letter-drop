@@ -241,11 +241,12 @@ const today = new Date().toISOString().slice(0,10); // YYYY-MM-DD
 // Track DAU — one write per user per day
 async function trackDAU(){
   try {
+    console.log('[Droplet] Attempting DAU track...');
     await setDoc(doc(db,'dau',today+'_'+uid),{
       uid, date:today, ts:serverTimestamp(), device: /Mobi/.test(navigator.userAgent)?'mobile':'desktop'
     },{merge:true});
-    console.log('[Droplet] DAU tracked:', uid, today);
-  } catch(e){ console.error('[Droplet] DAU error:', e); }
+    console.log('[Droplet] DAU tracked OK:', uid, today);
+  } catch(e){ console.error('[Droplet] DAU FAILED:', e.code, e.message); }
 }
 
 // Track a completed game
@@ -269,8 +270,8 @@ async function trackGame(score, wordsScored, baseLetters, topWord){
       totalScore: increment(score),
       uniqueUsers: increment(0)
     },{merge:true});
-    console.log('[Droplet] Game tracked:', {score, wordsScored, baseLetters: baseLetters.join(''), topWord});
-  } catch(e){ console.error('[Droplet] Game tracking error:', e); }
+    console.log('[Droplet] Game tracked OK:', {score, wordsScored, baseLetters: baseLetters.join(''), topWord});
+  } catch(e){ console.error('[Droplet] Game tracking FAILED:', e.code, e.message); }
 }
 
 // Track high score word
@@ -294,6 +295,7 @@ trackDAU();
 // Expose to game
 window._dropletTrackGame = trackGame;
 window._dropletTrackHighScore = trackHighScore;
+console.log('[Droplet] Firebase module loaded OK. UID:', uid);
 
 // Flush any game that completed before Firebase was ready
 if(window._dropletPendingGame){
