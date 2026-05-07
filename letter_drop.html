@@ -14,7 +14,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Syne',sans-serif;background:#0A0F14;color:#ffffff;padding:1.5rem 1rem 2rem;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+body{font-family:'Syne',sans-serif;background:#0A0F14;color:#ffffff;padding:1.5rem 1rem 2rem;overscroll-behavior:none;overflow-x:hidden;user-select:none;-webkit-user-select:none}
 html{overscroll-behavior:none}
 #header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem}
 #game-logo{max-width:230px}
@@ -129,8 +129,8 @@ html{overscroll-behavior:none}
 .nav-btn:hover{border-color:#2980B9;color:#2980B9}
 
 /* Slide-up panels */
-.panel{position:fixed;inset:0;background:#0A0F14;z-index:500;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);overflow-y:auto}
-.panel.open{transform:translateY(0)}
+.panel{position:fixed;inset:0;background:#0A0F14;z-index:500;display:flex;flex-direction:column;transform:translateY(105%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;visibility:hidden}
+.panel.open{transform:translateY(0);visibility:visible}
 .panel-header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1rem 0.75rem;border-bottom:1px solid #1B3A4B;position:sticky;top:0;background:#0A0F14;z-index:1}
 .panel-title{font-size:18px;font-weight:800;color:#fff}
 .panel-close{background:none;border:none;color:#1B3A4B;font-size:22px;cursor:pointer;line-height:1;padding:4px 8px}
