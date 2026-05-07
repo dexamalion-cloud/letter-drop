@@ -91,7 +91,7 @@
   <div class="table-card">
     <div class="table-title">🎲 Most Common Base Letter Combos</div>
     <table>
-      <thead><tr><th>Base Letters</th><th>Times Played</th><th>Avg Score</th></tr></thead>
+      <thead><tr><th>Base Letters</th><th>Times Played</th><th>Avg Score</th><th>Top Word</th></tr></thead>
       <tbody id="tbl-bases"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
     </table>
   </div>
@@ -231,15 +231,25 @@ async function loadBases(){
   snap.forEach(d=>{
     const g=d.data();
     const k=g.baseLetters||'???';
-    if(!bases[k]) bases[k]={count:0,totalScore:0};
+    if(!bases[k]) bases[k]={count:0,totalScore:0,topScore:0,topWord:''};
     bases[k].count++;
     bases[k].totalScore+=g.score||0;
+    // Track highest scoring word for this base combo
+    if((g.score||0)>bases[k].topScore){
+      bases[k].topScore=g.score||0;
+      bases[k].topWord=g.topWord||'';
+    }
   });
   const sorted=Object.entries(bases).sort((a,b)=>b[1].count-a[1].count).slice(0,15);
   const tbody=document.getElementById('tbl-bases');
-  if(!sorted.length){tbody.innerHTML='<tr><td colspan="3" style="color:#2980B9">No data yet</td></tr>';return;}
+  if(!sorted.length){tbody.innerHTML='<tr><td colspan="4" style="color:#2980B9">No data yet</td></tr>';return;}
   tbody.innerHTML=sorted.map(([k,v])=>
-    `<tr><td style="color:#85C1E9;font-family:monospace;font-size:16px;font-weight:700">${k}</td><td>${v.count}</td><td style="color:#1ABC9C">${Math.round(v.totalScore/v.count)}</td></tr>`
+    `<tr>
+      <td style="color:#85C1E9;font-family:monospace;font-size:16px;font-weight:700">${k}</td>
+      <td>${v.count}</td>
+      <td style="color:#1ABC9C">${Math.round(v.totalScore/v.count)}</td>
+      <td style="color:#F0B429;font-family:monospace">${v.topWord||'—'}</td>
+    </tr>`
   ).join('');
 }
 
