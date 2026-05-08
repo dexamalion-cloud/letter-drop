@@ -83,7 +83,7 @@
   <div class="table-card">
     <div class="table-title">🏆 Top 20 Scores (All Time)</div>
     <table>
-      <thead><tr><th>#</th><th>Score</th><th>Base</th><th>Top Word</th><th>Date</th><th>Device</th></tr></thead>
+      <thead><tr><th>#</th><th>Score</th><th>Base</th><th>Words</th><th>Date</th><th>Device</th></tr></thead>
       <tbody id="tbl-topscores"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
     </table>
   </div>
@@ -217,7 +217,7 @@ async function loadTopScores(){
     if(rank===1){topScore=g.score;topSub=g.baseLetters+' · '+g.date;}
     const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
     const dev=g.device==='mobile'?'<span class="badge badge-mobile">📱</span>':'<span class="badge badge-desktop">🖥</span>';
-    html+=`<tr><td>${medal}</td><td style="color:#1ABC9C;font-weight:700">${g.score}</td><td style="color:#85C1E9;font-family:monospace">${g.baseLetters||'—'}</td><td>${g.topWord||'—'}</td><td style="color:#2980B9">${g.date||'—'}</td><td>${dev}</td></tr>`;
+    html+=`<tr><td>${medal}</td><td style="color:#1ABC9C;font-weight:700">${g.score}</td><td style="color:#85C1E9;font-family:monospace">${g.baseLetters||'—'}</td><td style="color:#85C1E9">${g.wordsScored||g.wordCount||'—'}</td><td style="color:#2980B9">${g.date||'—'}</td><td>${dev}</td></tr>`;
     rank++;
   });
   tbody.innerHTML=html;
