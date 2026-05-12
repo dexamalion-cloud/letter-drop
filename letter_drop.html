@@ -1234,20 +1234,30 @@ endGame=function(){
 };
 
 // Panel open/close
-document.getElementById("scoring-btn").addEventListener("click",()=>document.getElementById("scoring-panel").classList.add("open"));
-document.getElementById("scoring-close").addEventListener("click",()=>document.getElementById("scoring-panel").classList.remove("open"));
-document.getElementById("leaderboard-btn").addEventListener("click",()=>{renderLeaderboard();document.getElementById("leaderboard-panel").classList.add("open");});
-document.getElementById("leaderboard-close").addEventListener("click",()=>document.getElementById("leaderboard-panel").classList.remove("open"));
+document.getElementById("scoring-btn").addEventListener("click",()=>{document.getElementById("scoring-panel").classList.add("open");document.getElementById("scoring-panel").dataset.from="game";});
+document.getElementById("scoring-close").addEventListener("click",()=>{
+  const from=document.getElementById("scoring-panel").dataset.from;
+  document.getElementById("scoring-panel").classList.remove("open");
+  if(from==="gameover") document.getElementById("game-over-overlay").classList.add("show");
+});
+document.getElementById("leaderboard-btn").addEventListener("click",()=>{renderLeaderboard();document.getElementById("leaderboard-panel").classList.add("open");document.getElementById("leaderboard-panel").dataset.from="game";});
+document.getElementById("leaderboard-close").addEventListener("click",()=>{
+  const from=document.getElementById("leaderboard-panel").dataset.from;
+  document.getElementById("leaderboard-panel").classList.remove("open");
+  if(from==="gameover") document.getElementById("game-over-overlay").classList.add("show");
+});
 
 // Game-over overlay nav buttons
 document.getElementById("go-scoring-btn").addEventListener("click",()=>{
   document.getElementById("game-over-overlay").classList.remove("show");
   document.getElementById("scoring-panel").classList.add("open");
+  document.getElementById("scoring-panel").dataset.from="gameover";
 });
 document.getElementById("go-leaderboard-btn").addEventListener("click",()=>{
   document.getElementById("game-over-overlay").classList.remove("show");
   renderLeaderboard();
   document.getElementById("leaderboard-panel").classList.add("open");
+  document.getElementById("leaderboard-panel").dataset.from="gameover";
 });
 document.getElementById("potential-close").addEventListener("click",()=>{
   document.getElementById("potential-panel").classList.remove("open");
