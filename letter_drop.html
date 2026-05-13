@@ -157,14 +157,14 @@ html{overscroll-behavior:none}
 .lb-word{font-family:'Space Mono',monospace;font-size:11px;padding:2px 8px;background:#0E1C2A;border:1px solid #1B3A4B;border-radius:4px;color:#fff}
 .lb-empty{color:#85C1E9;font-size:14px;text-align:center;padding:2rem 0;font-family:'Syne',sans-serif}
 .lb-date{font-family:'Space Mono',monospace;font-size:11px;color:#85C1E9;margin-left:auto;white-space:nowrap;text-align:right}
-.ghost-drag{position:fixed;pointer-events:none;z-index:9999;width:44px;height:52px;background:#2980B9;color:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;font-family:'Space Mono',monospace;transform:translate(-50%,-50%) rotate(15deg) scale(1.1);text-transform:uppercase}
+.ghost-drag{position:fixed;pointer-events:none;z-index:9999;width:44px;height:52px;background:#2980B9;color:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;font-family:'Space Mono',monospace;transform:translate(-50%,-90%) rotate(15deg) scale(1.1);text-transform:uppercase}
 
 #ad-game-bottom{width:100%;min-height:60px;margin-top:1.25rem;background:#0E1C2A;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 #ad-gameover{width:100%;min-height:60px;margin-top:1rem;background:rgba(20,49,26,0.6);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .ad-placeholder{font-size:10px;color:#1B3A4B;font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;padding:8px}
 
 /* Scored words overflow */
-#go-words-btn{background:#0E1C2A;border:1.5px solid #2980B9;color:#85C1E9;border-radius:4px;padding:3px 10px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:1px;display:inline-block;vertical-align:middle}
+#go-words-btn{background:#0E1C2A;border:1.5px solid #2980B9;color:#85C1E9;border-radius:4px;padding:3px 10px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:2px;display:none}
 #go-words-btn:hover{background:#2980B933}
 
 /* Potential words panel */
@@ -1053,7 +1053,10 @@ function endGame(){
     if(goWordsBtn) goWordsBtn.style.display='none';
   } else {
     appendPillsWithClicks(goWords, allPills.slice(0,MAX_PILLS));
-    if(goWordsBtn) goWordsBtn.style.display='inline-block';
+    if(goWordsBtn){
+      goWordsBtn.style.display='inline-block';
+      goWords.appendChild(goWordsBtn);
+    }
   }
   document.getElementById("game-over-score").textContent=score;
   // Show potential words count
