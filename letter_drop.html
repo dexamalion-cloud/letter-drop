@@ -707,6 +707,14 @@ function touch(el,info){
     e.preventDefault();
   },{passive:false});
 
+  el.addEventListener("touchcancel",e=>{
+    // Browser hijacked the touch (e.g. back gesture) — clean up drag state
+    if(ghost){ghost.remove();ghost=null;}
+    el.classList.remove("dragging");
+    closeAllGaps();
+    showTrash(false);
+    di=null;
+  });
   el.addEventListener("touchend",e=>{
     const t=e.changedTouches[0];
     if(ghost){ghost.remove();ghost=null;}
@@ -1288,6 +1296,15 @@ document.getElementById("new-game-btn").addEventListener("click",newGame);
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
+// Global touchcancel safety net — cleans up if browser hijacks any touch
+document.addEventListener('touchcancel', ()=>{
+  if(ghost){ghost.remove();ghost=null;}
+  di=null;
+  closeAllGaps();
+  document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));
+  showTrash(false);
+});
+
 // Prevent browser edge-swipe navigation (back/forward gestures)
 document.addEventListener('touchstart', e=>{
   if(e.touches.length===1){
