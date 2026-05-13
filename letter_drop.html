@@ -1295,6 +1295,15 @@ document.addEventListener('touchstart', e=>{
     if(x<20||x>window.innerWidth-20) e.preventDefault();
   }
 },{passive:false});
+
+// Also block edge swipes during active drags
+document.addEventListener('touchmove', e=>{
+  if(e.touches.length===1 && e.cancelable){
+    const x=e.touches[0].clientX;
+    // If dragging near the edge, block navigation
+    if(x<30||x>window.innerWidth-30) e.preventDefault();
+  }
+},{passive:false});
 </script>
 </body>
 </html>
