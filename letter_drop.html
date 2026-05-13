@@ -532,11 +532,6 @@ function autoCheck(){
   if(used.has(w)){
     showHint("\""+w+"\" already scored","broken");
     document.getElementById("word-zone").classList.add("broken");
-    document.getElementById("word-zone").animate([
-      {transform:"translateX(0)"},{transform:"translateX(-6px)"},
-      {transform:"translateX(6px)"},{transform:"translateX(-4px)"},
-      {transform:"translateX(4px)"},{transform:"translateX(0)"}
-    ],{duration:280});
     setTimeout(()=>{
       document.getElementById("word-zone").classList.remove("broken");
       showHint("","");
