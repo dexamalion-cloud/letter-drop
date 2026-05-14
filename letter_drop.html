@@ -958,12 +958,12 @@ function calcPotentialWords(baseLetters){
     results.sort((a,b)=>a.length-b.length||a.localeCompare(b));
     potentialWords=results;
     potentialCalcDone=true;
-    // Redraw if fewer than 1000 possible words
+    // Redraw if fewer than 1300 possible words
     const playable=results.filter(w=>w.length>=4).length;
     if(playable<1300 && gameActive){
       base=pickBase();
-      document.getElementById("base-hint")&&(document.getElementById("base-hint").textContent="");
-      initWord();renderWord();
+      initWord();
+      renderWord();
       calcPotentialWords(base);
     }
   },100);
