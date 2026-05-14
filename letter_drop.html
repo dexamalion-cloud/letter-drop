@@ -562,6 +562,7 @@ function autoCheck(){
       addPill(w,true);
       if(w.length>=7)setTimeout(()=>{launchFish(z);},80);
       setTimeout(()=>{const uw=document.getElementById("used-words");launchDroplet(z,uw);},60);
+      playDroplet();
       z.animate([{transform:"scale(1)"},{transform:"scale(1.03)"},{transform:"scale(1)"}],{duration:300});
     }else{
       chain=1;updateChainDisplay();
@@ -571,6 +572,7 @@ function autoCheck(){
       addPill(w,false);
       if(w.length>=7)setTimeout(()=>{launchFish(z);},80);
       setTimeout(()=>{const uw=document.getElementById("used-words");launchDroplet(z,uw);},60);
+      playDroplet();
       z.animate([{transform:"scale(1)"},{transform:"scale(1.02)"},{transform:"scale(1)"}],{duration:250});
     }
     isLocked=isBase.map(()=>false);addedCount=0;
@@ -1003,6 +1005,55 @@ function showPotentialPanel(){
   renderWords(null);
 }
 
+// ── Audio Engine ─────────────────────────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new AudioCtx();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playDroplet(){
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    // Plop sound — quick pitch drop like a water droplet
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, t);
+    osc.frequency.exponentialRampToValueAtTime(200, t + 0.12);
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    osc.start(t);
+    osc.stop(t + 0.18);
+  } catch(e){}
+}
+
+
+
+function playBeep(){
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    // Short urgent beep
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t);
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  } catch(e){}
+}
+
 function buildKeyboard(){
   const kbd=document.getElementById("keyboard");kbd.innerHTML="";
   ROWS.forEach(row=>{const r=document.createElement("div");r.className="kbd-row";row.forEach(l=>{const k=document.createElement("div");k.className="key"+(l==="QU"?" wide":"");k.textContent=l;dragKey(k,l);r.appendChild(k);});kbd.appendChild(r);});
@@ -1014,6 +1065,7 @@ function updateTimer(){
   const el=document.getElementById("timer-display");
   el.textContent=formatTime(timeLeft);
   el.className=timeLeft<=10?"critical":timeLeft<=20?"urgent":"";
+  if(timeLeft<=10) playBeep();
   if(timeLeft<=0){clearInterval(timerInterval);timerInterval=null;endGame();}
 }
 function endGame(){
@@ -1088,6 +1140,10 @@ function newGame(){
   timerInterval=setInterval(updateTimer,1000);
   calcPotentialWords(base);
 }
+
+// Unlock audio on first touch/click
+document.addEventListener('touchstart', ()=>{ try{ getAudioCtx(); }catch(e){} }, {once:true});
+document.addEventListener('click', ()=>{ try{ getAudioCtx(); }catch(e){} }, {once:true});
 
 buildKeyboard();setupWordZone();setupTrash();newGame();
 document.getElementById("play-again-btn").addEventListener("click",newGame);
