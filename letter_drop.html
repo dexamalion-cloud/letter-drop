@@ -45,6 +45,8 @@ html{overscroll-behavior:none}
 #game-over-score{font-size:56px;font-weight:800;font-family:'Space Mono',monospace;color:#2980B9;margin-bottom:1.5rem;line-height:1}
 #play-again-btn{background:#2980B9;color:#fff;border:none;border-radius:6px;padding:12px 32px;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:background 0.15s}
 #play-again-btn:hover{background:#3A9FD4}
+#share-btn{background:transparent;border:1.5px solid #2980B9;color:#85C1E9;border-radius:6px;padding:10px 24px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;margin-top:0.5rem;width:100%}
+#share-btn:hover{background:#2980B922}
 #medal-msg{font-size:16px;font-weight:800;text-align:center;margin-bottom:1rem;min-height:24px;font-family:'Syne',sans-serif;letter-spacing:-0.3px}
 #medal-msg.gold{color:#85C1E9}
 #medal-msg.silver{color:#A8B8C8}
@@ -63,6 +65,8 @@ html{overscroll-behavior:none}
 #game-over-score{font-size:56px;font-weight:800;font-family:'Space Mono',monospace;color:#2980B9;margin-bottom:1.5rem;line-height:1}
 #play-again-btn{background:#2980B9;color:#fff;border:none;border-radius:6px;padding:12px 32px;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:background 0.15s}
 #play-again-btn:hover{background:#3A9FD4}
+#share-btn{background:transparent;border:1.5px solid #2980B9;color:#85C1E9;border-radius:6px;padding:10px 24px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;margin-top:0.5rem;width:100%}
+#share-btn:hover{background:#2980B922}
 #medal-msg{font-size:16px;font-weight:800;text-align:center;margin-bottom:1rem;min-height:24px;font-family:'Syne',sans-serif;letter-spacing:-0.3px}
 #medal-msg.gold{color:#85C1E9}
 #medal-msg.silver{color:#A8B8C8}
@@ -330,6 +334,7 @@ if(window._dropletPendingGame){
     <div id="game-over-score"></div>
     <div id="medal-msg"></div>
     <button id="play-again-btn">Play Again</button>
+    <button id="share-btn">📤 Share my score</button>
     <!-- Game over ad slot — replace inner div with AdSense unit when approved -->
     <div id="ad-gameover">
       <div class="ad-placeholder">Advertisement</div>
@@ -1147,6 +1152,32 @@ document.addEventListener('click', ()=>{ try{ getAudioCtx(); }catch(e){} }, {onc
 
 buildKeyboard();setupWordZone();setupTrash();newGame();
 document.getElementById("play-again-btn").addEventListener("click",newGame);
+
+document.getElementById("share-btn").addEventListener("click",()=>{
+  const gameUrl="https://dexamalion-cloud.github.io/letter-drop/letter_drop.html";
+  const baseStr=base.join("");
+  const wordCount=[...used].length;
+  const shareText=`I scored ${score} points in Droplet! 💧\nI found ${wordCount} word${wordCount!==1?"s":""} from the base letters ${baseStr}.\nCan you beat me? Play free at ${gameUrl}`;
+  if(navigator.share){
+    navigator.share({
+      title:"Droplet — Word Game",
+      text:shareText,
+      url:gameUrl
+    }).catch(()=>{});
+  } else {
+    // Fallback — copy to clipboard
+    navigator.clipboard.writeText(shareText).then(()=>{
+      const btn=document.getElementById("share-btn");
+      const orig=btn.textContent;
+      btn.textContent="✓ Copied to clipboard!";
+      setTimeout(()=>btn.textContent=orig,2500);
+    }).catch(()=>{
+      // Last resort — open Twitter/X with pre-filled text
+      const tweetUrl="https://twitter.com/intent/tweet?text="+encodeURIComponent(shareText);
+      window.open(tweetUrl,"_blank");
+    });
+  }
+});
 
 // ── Leaderboard storage ───────────────────────────────────────────────
 function saveScore(score, baseLetters){
