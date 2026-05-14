@@ -958,6 +958,14 @@ function calcPotentialWords(baseLetters){
     results.sort((a,b)=>a.length-b.length||a.localeCompare(b));
     potentialWords=results;
     potentialCalcDone=true;
+    // Redraw if fewer than 1000 possible words
+    const playable=results.filter(w=>w.length>=4).length;
+    if(playable<1300 && gameActive){
+      base=pickBase();
+      document.getElementById("base-hint")&&(document.getElementById("base-hint").textContent="");
+      initWord();renderWord();
+      calcPotentialWords(base);
+    }
   },100);
 }
 
@@ -1157,7 +1165,9 @@ document.getElementById("share-btn").addEventListener("click",()=>{
   const gameUrl="https://dexamalion-cloud.github.io/letter-drop/letter_drop.html";
   const baseStr=base.join("");
   const wordCount=[...used].length;
-  const shareText=`I scored ${score} points in Droplet! 💧\\nI found ${wordCount} word${wordCount!==1?"s":""} from the base letters ${baseStr}.\\nCan you beat me?`;
+  const shareText=`I scored ${score} points in Droplet! 💧
+I found ${wordCount} word${wordCount!==1?"s":""} from the base letters ${baseStr}.
+Can you beat me?`;
   if(navigator.share){
     navigator.share({
       title:"Droplet — Word Game",
