@@ -1166,6 +1166,13 @@ function newGame(){
   calcPotentialWords(base);
 }
 
+// Global error catcher to identify const reassignment
+window.addEventListener('error', e=>{
+  if(e.message && e.message.includes('Assignment to constant')){
+    console.error('[Droplet] Const error at:', e.filename, 'line:', e.lineno, 'col:', e.colno, 'msg:', e.message);
+  }
+});
+
 // Unlock audio on first touch/click
 document.addEventListener('touchstart', ()=>{ try{ getAudioCtx(); _loadDropletBuffer(); }catch(e){} }, {once:true});
 document.addEventListener('click', ()=>{ try{ getAudioCtx(); _loadDropletBuffer(); }catch(e){} }, {once:true});
