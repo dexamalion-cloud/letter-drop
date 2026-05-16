@@ -222,9 +222,10 @@ html{overscroll-behavior:none}
 #scored-words-count{font-size:12px;color:#2980B9;font-family:'Space Mono',monospace;margin-bottom:0.75rem}
 #scored-words-all{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;overflow-y:auto;flex:1;padding:0.25rem 0}
 #scored-words-back{margin-top:1rem;background:transparent;border:1.5px solid #2980B9;color:#85C1E9;border-radius:6px;padding:8px 24px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;flex-shrink:0}
-#scored-words-back:hover{background:#2980B922#sfx-btn,#music-btn{background:transparent;border:none;font-size:18px;cursor:pointer;padding:2px 4px;opacity:0.7;transition:opacity 0.15s;line-height:1}
+#scored-words-back:hover{background:#2980B922#sound-bar{display:flex;justify-content:flex-end;gap:8px;padding:4px 8px 0}
+#sfx-btn,#music-btn{background:transparent;border:none;font-size:20px;cursor:pointer;padding:4px 8px;opacity:0.6;transition:opacity 0.15s;line-height:1}
 #sfx-btn:hover,#music-btn:hover{opacity:1}
-#sfx-btn.muted,#music-btn.muted{opacity:0.35}
+#sfx-btn.muted,#music-btn.muted{opacity:0.25}
 }
 </style>
 <script type="module">
@@ -381,8 +382,6 @@ if(window._dropletPendingGame){
   <div id="header-right">
     <div id="timer-wrap"><div id="timer-label">TIME</div><div id="timer-display">1:30</div></div>
     <div><div id="score-label">Score</div><div id="score-value">0</div></div>
-    <button id="sfx-btn" title="Toggle sound">🔊</button>
-    <button id="music-btn" title="Toggle music">🎵</button>
   </div>
 </div>
 <div id="chain-bar"><div id="chain-display">chain: 0</div></div>
@@ -391,6 +390,10 @@ if(window._dropletPendingGame){
 <div id="word-hint"></div>
 <div id="trash-zone" class="hidden"></div>
 <div id="kbd-label">Keyboard - drag letters into the word</div>
+<div id="sound-bar">
+  <button id="sfx-btn" title="Toggle sound">🔊</button>
+  <button id="music-btn" title="Toggle music">🎵</button>
+</div>
 <div id="keyboard"></div>
 <div id="actions"><button class="action-btn danger" id="clear-btn">Clear</button></div>
 <div id="used-words"></div>
@@ -543,8 +546,6 @@ if(window._dropletPendingGame){
   <div id="header-right">
     <div id="timer-wrap"><div id="timer-label">TIME</div><div id="timer-display">1:30</div></div>
     <div><div id="score-label">Score</div><div id="score-value">0</div></div>
-    <button id="sfx-btn" title="Toggle sound">🔊</button>
-    <button id="music-btn" title="Toggle music">🎵</button>
   </div>
 </div>
 <div id="chain-bar"><div id="chain-display">chain: 0</div></div>
@@ -553,6 +554,10 @@ if(window._dropletPendingGame){
 <div id="word-hint"></div>
 <div id="trash-zone" class="hidden"></div>
 <div id="kbd-label">Keyboard - drag letters into the word</div>
+<div id="sound-bar">
+  <button id="sfx-btn" title="Toggle sound">🔊</button>
+  <button id="music-btn" title="Toggle music">🎵</button>
+</div>
 <div id="keyboard"></div>
 <div id="actions"><button class="action-btn danger" id="clear-btn">Clear</button></div>
 <div id="used-words"></div>
@@ -1406,9 +1411,16 @@ function initMusic(){
 function setMusicEnabled(on){
   musicEnabled = on;
   localStorage.setItem("droplet_music", on ? "on" : "off");
-  if(!_musicAudio) return;
-  if(on) _musicAudio.play().catch(()=>{});
-  else _musicAudio.pause();
+  if(!_musicAudio){
+    if(on) initMusic();
+    return;
+  }
+  if(on){
+    _musicAudio.play().catch(()=>{});
+  } else {
+    _musicAudio.pause();
+    _musicAudio.currentTime = 0;
+  }
 }
 
 // Global error catcher to identify const reassignment
@@ -1441,8 +1453,10 @@ sfxBtn.addEventListener("click",()=>{
 let musicBtn = document.getElementById("music-btn");
 if(!musicEnabled) musicBtn.classList.add("muted");
 musicBtn.addEventListener("click",()=>{
-  setMusicEnabled(!musicEnabled);
-  musicBtn.classList.toggle("muted", !musicEnabled);
+  let nowEnabled = !musicEnabled;
+  if(nowEnabled && !_musicAudio) initMusic();
+  setMusicEnabled(nowEnabled);
+  musicBtn.classList.toggle("muted", !nowEnabled);
 });
 
 document.getElementById("share-btn").addEventListener("click",()=>{
