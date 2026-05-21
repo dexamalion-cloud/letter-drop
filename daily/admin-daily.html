@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Droplet · Admin</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px;
+    background: #0A0F14; color: #ECF0F1;
+    font-family: 'Georgia', serif;
+    max-width: 700px; margin: 0 auto;
+  }
+  h1 { color: #85C1E9; font-size: 22px; margin: 0 0 16px; }
+  h2 { color: #1ABC9C; font-size: 16px; margin: 24px 0 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .card {
+    background: #0E1C2A; border: 1px solid #1A2E42;
+    border-radius: 10px; padding: 16px; margin-bottom: 14px;
+  }
+  label { display: block; font-size: 12px; color: #95A5A6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  input, select {
+    background: #122638; color: #ECF0F1;
+    border: 1px solid #1A2E42; border-radius: 6px;
+    padding: 8px 10px; font-size: 14px;
+    font-family: inherit; width: 100%;
+  }
+  button {
+    background: #2980B9; color: white; border: none;
+    padding: 10px 18px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { background: #3498DB; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end; }
+  .feedback { margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+  .feedback.ok { background: rgba(26,188,156,0.15); color: #1ABC9C; }
+  .feedback.err { background: rgba(231,76,60,0.15); color: #E74C3C; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid #1A2E42; text-align: left; }
+  th { color: #95A5A6; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+  .preview {
+    display: inline-flex; gap: 4px;
+  }
+  .preview span {
+    background: #85C1E9; color: #0A0F14;
+    width: 26px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; font-weight: 700;
+  }
+  .login {
+    max-width: 320px; margin: 80px auto;
+  }
+  .small { color: #607080; font-size: 11px; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="login" id="login">
+  <h1>💧 Admin Login</h1>
+  <div class="card">
+    <label>Password</label>
+    <input type="password" id="pw" autofocus>
+    <button id="login-btn" style="margin-top:10px;width:100%">Enter</button>
+    <div id="login-fb"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <h1>💧 Daily Droplet · Admin</h1>
+
+  <h2>Set a Daily Puzzle</h2>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Date</label>
+        <input type="date" id="set-date">
+      </div>
+      <div>
+        <label>Letters (CVC)</label>
+        <input type="text" id="set-letters" maxlength="3" placeholder="RAT" style="text-transform:uppercase">
+      </div>
+      <div>
+        <label>Puzzle #</label>
+        <input type="number" id="set-num" min="1">
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <span class="preview" id="preview"></span>
+      <span class="small" id="word-count"></span>
+    </div>
+    <button id="save-btn" style="margin-top:14px">Save puzzle</button>
+    <div id="save-fb"></div>
+  </div>
+
+  <h2>Upcoming Puzzles</h2>
+  <div class="card">
+    <table id="upcoming-tbl">
+      <thead><tr><th>Date</th><th>#</th><th>Letters</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <h2>Recent Plays</h2>
+  <div class="card">
+    <table id="plays-tbl">
+      <thead><tr><th>Date</th><th>Name</th><th>Score</th><th>Words</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs, where
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// IMPORTANT: change this before deploying
+const ADMIN_PASSWORD = ')Hyperfranchise0';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCuVqYaV7r04ZkUsNU-zFS9eCMQFitYheM",
+  authDomain: "droplet-stats-7112c.firebaseapp.com",
+  projectId: "droplet-stats-7112c",
+};
+const db = getFirestore(initializeApp(firebaseConfig));
+
+const $ = id => document.getElementById(id);
+
+$('login-btn').addEventListener('click', tryLogin);
+$('pw').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+function tryLogin() {
+  if ($('pw').value === ADMIN_PASSWORD) {
+    sessionStorage.setItem('droplet_admin', '1');
+    showApp();
+  } else {
+    $('login-fb').innerHTML = '<div class="feedback err">Wrong password</div>';
+  }
+}
+if (sessionStorage.getItem('droplet_admin') === '1') showApp();
+
+function showApp() {
+  $('login').style.display = 'none';
+  $('app').style.display = 'block';
+  initApp();
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function initApp() {
+  $('set-date').value = todayKey();
+  // Suggest next puzzle number
+  const q = query(collection(db, 'dailyLetters'), orderBy('puzzleNumber', 'desc'), limit(1));
+  const snap = await getDocs(q);
+  const next = snap.empty ? 1 : (snap.docs[0].data().puzzleNumber + 1);
+  $('set-num').value = next;
+
+  $('set-letters').addEventListener('input', updatePreview);
+  $('save-btn').addEventListener('click', savePuzzle);
+  updatePreview();
+  loadUpcoming();
+  loadRecentPlays();
+}
+
+function updatePreview() {
+  const v = ($('set-letters').value || '').toUpperCase();
+  $('set-letters').value = v;
+  const p = $('preview');
+  p.innerHTML = '';
+  for (const c of v) { const s = document.createElement('span'); s.textContent = c; p.appendChild(s); }
+  if (v.length === 3 && /^[A-Z]{3}$/.test(v)) {
+    if (!/[AEIOU]/.test(v[1])) {
+      $('word-count').textContent = '⚠️ Middle letter should be a vowel (CVC pattern)';
+      $('word-count').style.color = '#F39C12';
+    } else {
+      $('word-count').textContent = 'Looks good. Run countPotential() in the game to confirm word count.';
+      $('word-count').style.color = '#607080';
+    }
+  } else {
+    $('word-count').textContent = '';
+  }
+}
+
+async function savePuzzle() {
+  const date = $('set-date').value;
+  const letters = ($('set-letters').value || '').toUpperCase().trim();
+  const num = parseInt($('set-num').value, 10);
+  const fb = $('save-fb');
+  fb.innerHTML = '';
+  if (!date || !/^[A-Z]{3}$/.test(letters) || !num) {
+    fb.innerHTML = '<div class="feedback err">Fill all fields. Letters must be 3 A–Z.</div>';
+    return;
+  }
+  try {
+    await setDoc(doc(db, 'dailyLetters', date), {
+      letters, puzzleNumber: num, createdAt: new Date().toISOString()
+    });
+    fb.innerHTML = `<div class="feedback ok">Saved puzzle #${num} for ${date}: ${letters}</div>`;
+    loadUpcoming();
+  } catch (err) {
+    fb.innerHTML = `<div class="feedback err">Save failed: ${err.message}</div>`;
+  }
+}
+
+async function loadUpcoming() {
+  const today = todayKey();
+  const q = query(collection(db, 'dailyLetters'), orderBy('puzzleNumber', 'desc'), limit(20));
+  const snap = await getDocs(q);
+  const tb = $('upcoming-tbl').querySelector('tbody');
+  tb.innerHTML = '';
+  snap.docs.forEach(d => {
+    const data = d.data();
+    const tr = document.createElement('tr');
+    const isToday = d.id === today;
+    tr.innerHTML = `
+      <td>${d.id}${isToday ? ' <b style="color:#1ABC9C">(today)</b>' : ''}</td>
+      <td>#${data.puzzleNumber}</td>
+      <td><span class="preview">${data.letters.split('').map(c => `<span>${c}</span>`).join('')}</span></td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+async function loadRecentPlays() {
+  const q = query(collection(db, 'dailyPlays'), orderBy('timestamp', 'desc'), limit(30));
+  const snap = await getDocs(q);
+  const tb = $('plays-tbl').querySelector('tbody');
+  tb.innerHTML = '';
+  snap.docs.forEach(d => {
+    const data = d.data();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${data.date}</td>
+      <td>${data.name || '—'}</td>
+      <td>${data.score}</td>
+      <td>${data.wordsFound}</td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+</script>
+</body>
+</html>
