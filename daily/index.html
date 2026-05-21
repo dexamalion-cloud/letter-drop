@@ -599,6 +599,11 @@ const firebaseConfig = {
   storageBucket: "droplet-stats-7112c.firebasestorage.app",
   messagingSenderId: "724486498795",
   appId: "1:724486498795:web:89e657469f70ba70f791ae"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+// ─── Constants ────────────────────────────────────────────────────────────
 
 // ─── Constants ────────────────────────────────────────────────────────────
 const GAME_DURATION = 90;
