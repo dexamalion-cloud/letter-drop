@@ -600,6 +600,10 @@ const firebaseConfig = {
   messagingSenderId: "724486498795",
   appId: "1:724486498795:web:89e657469f70ba70f791ae"
 
+    };
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
 // ─── Constants ────────────────────────────────────────────────────────────
 const GAME_DURATION = 90;
 const TOUGH_LETTERS = new Set(['J','X','Q','Z']);
