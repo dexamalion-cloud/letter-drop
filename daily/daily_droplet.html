@@ -325,7 +325,7 @@ const DAILY_LAUNCH_DATE = "2026-05-26";
 // Change this one line to switch between modes:
 //   "timed"     — original 90-second countdown
 //   "unlimited" — no timer, play until you click Finish
-const GAME_MODE = "unlimited";
+var GAME_MODE = "unlimited";
 function getPuzzleNumber(dateKey){
   const a = new Date(DAILY_LAUNCH_DATE+"T00:00:00Z");
   const b = new Date(dateKey+"T00:00:00Z");
