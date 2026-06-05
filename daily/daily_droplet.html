@@ -1681,6 +1681,8 @@ async function newGame(){
   updateChainDisplay();initWord();showHint("","");renderWord();
   gameActive=true;
   calcPotentialWords(base);
+  // Re-render after a short delay to ensure tiles are visible after any CSS transitions settle
+  setTimeout(()=>{ if(gameActive) renderWord(); }, 150);
 }
 
 // Global error catcher to identify const reassignment
