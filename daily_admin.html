@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Droplet — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0A0F14;
+    --surface:   #0E1C2A;
+    --surface2:  #122233;
+    --border:    #1B3A4B;
+    --steel:     #2980B9;
+    --ice:       #85C1E9;
+    --teal:      #1ABC9C;
+    --red:       #E74C3C;
+    --amber:     #F39C12;
+    --text:      #D6EAF8;
+    --muted:     #4A7A99;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Login overlay ───────────────────────────────── */
+  #login-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  #login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem;
+    width: min(360px, 90vw);
+    text-align: center;
+  }
+  #login-box .logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--ice);
+    letter-spacing: 2px;
+    margin-bottom: 0.25rem;
+  }
+  #login-box .sub {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  #login-box input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 1rem;
+    text-align: center;
+    outline: none;
+    margin-bottom: 1rem;
+  }
+  #login-box input:focus { border-color: var(--steel); }
+  #login-box button {
+    width: 100%;
+    background: var(--steel);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #login-box button:hover { background: #3498DB; }
+  #login-error {
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    margin-top: 0.75rem;
+    min-height: 1rem;
+  }
+
+  /* ── Top bar ─────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 0;
+  }
+  header .logo {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--ice);
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  header .logo span { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.5rem; font-family: var(--mono); }
+  header nav { display: flex; gap: 0.25rem; }
+  header nav button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.4rem 0.9rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  header nav button:hover { color: var(--text); background: var(--border); }
+  header nav button.active { color: var(--ice); background: var(--border); }
+  header .dict-status {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  header .dict-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--amber);
+    animation: pulse 1.2s infinite;
+  }
+  header .dict-dot.ready { background: var(--teal); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── Layout ──────────────────────────────────────── */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    overflow: hidden;
+    height: calc(100vh - 56px);
+  }
+
+  /* ── Sidebar ─────────────────────────────────────── */
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .calendar-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.25rem;
+  }
+  .calendar-nav button {
+    background: none; border: none;
+    color: var(--muted); font-size: 1.1rem;
+    cursor: pointer; padding: 0.3rem 0.6rem;
+    border-radius: 4px; transition: color 0.15s;
+  }
+  .calendar-nav button:hover { color: var(--ice); }
+  .calendar-month {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--ice);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-header {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: center;
+    padding: 0.2rem 0;
+    letter-spacing: 1px;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+    border: 1px solid transparent;
+  }
+  .cal-day:hover { background: var(--border); color: var(--ice); }
+  .cal-day.empty { cursor: default; }
+  .cal-day.today { border-color: var(--steel); color: var(--ice); }
+  .cal-day.selected { background: var(--steel); color: #fff; border-color: var(--steel); }
+  .cal-day.has-puzzle::after {
+    content: '';
+    position: absolute;
+    bottom: 2px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--teal);
+  }
+  .cal-day.selected.has-puzzle::after { background: #fff; }
+  .cal-day.past { color: var(--muted); }
+
+  .sidebar-section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem;
+  }
+  .sidebar-section h3 {
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-val {
+    font-family: var(--mono);
+    color: var(--ice);
+    font-size: 0.85rem;
+  }
+  .stat-label { color: var(--muted); font-size: 0.78rem; }
+
+  /* ── Content panel ───────────────────────────────── */
+  .content-panel {
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .panel-section { display: none; }
+  .panel-section.active { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* ── Section headers ─────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-header h2 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--ice);
+  }
+  .section-header .date-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* ── Puzzle editor ───────────────────────────────── */
+  .puzzle-editor {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+  }
+  .letter-entry {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .letter-tiles {
+    display: flex; gap: 0.5rem;
+  }
+  .letter-tile {
+    width: 64px; height: 64px;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ice);
+    text-transform: uppercase;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+  .letter-tile.c1 { border-color: var(--steel); }
+  .letter-tile.v  { border-color: var(--border); background: var(--surface2); }
+  .letter-tile.c2 { border-color: var(--steel); }
+  .tile-label {
+    position: absolute;
+    bottom: 3px; left: 0; right: 0;
+    text-align: center;
+    font-size: 0.5rem;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .letter-input-group {
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+  .input-row {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .input-row label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    width: 80px;
+    text-transform: uppercase;
+  }
+  .input-row input[type="text"] {
+    width: 60px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    color: var(--ice);
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-row input[type="text"]:focus { border-color: var(--steel); }
+
+  .validation-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    margin-bottom: 1rem;
+    min-height: 44px;
+  }
+  .val-icon { font-size: 1.1rem; flex-shrink: 0; }
+  .val-text {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+  }
+  .val-text.ok   { color: var(--teal); }
+  .val-text.warn { color: var(--amber); }
+  .val-text.err  { color: var(--red); }
+  .val-text.idle { color: var(--muted); }
+
+  .word-count-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0.5rem 0 1rem;
+  }
+  .word-count-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--red);
+    transition: width 0.4s ease, background 0.4s ease;
+  }
+
+  .puzzle-actions {
+    display: flex; gap: 0.75rem; flex-wrap: wrap;
+  }
+  .btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary   { background: var(--steel); color: #fff; }
+  .btn-primary:hover:not(:disabled)   { background: #3498DB; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover:not(:disabled) { background: var(--border); color: var(--ice); }
+  .btn-danger    { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn-danger:hover:not(:disabled)    { background: rgba(231,76,60,0.12); }
+  .btn-teal      { background: var(--teal); color: #fff; }
+  .btn-teal:hover:not(:disabled)      { background: #17A589; }
+
+  .save-feedback {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 5px;
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .save-feedback.show { display: flex; }
+  .save-feedback.ok   { color: var(--teal); background: rgba(26,188,156,0.1); }
+  .save-feedback.err  { color: var(--red); background: rgba(231,76,60,0.1); }
+
+  /* ── Bulk generator ──────────────────────────────── */
+  .bulk-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+  }
+  .bulk-section h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ice);
+    margin-bottom: 0.5rem;
+  }
+  .bulk-section p {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+  .bulk-controls { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .bulk-controls input[type="number"] {
+    width: 80px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    color: var(--ice);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    text-align: center;
+    outline: none;
+  }
+  .bulk-controls input:focus { border-color: var(--steel); }
+  .bulk-log {
+    margin-top: 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    max-height: 180px;
+    overflow-y: auto;
+    display: none;
+  }
+  .bulk-log.show { display: block; }
+  .bulk-log .log-ok   { color: var(--teal); }
+  .bulk-log .log-skip { color: var(--amber); }
+  .bulk-log .log-done { color: var(--ice); font-weight: 700; }
+
+  /* ── Leaderboard ─────────────────────────────────── */
+  .leaderboard-controls {
+    display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;
+  }
+  .leaderboard-controls input[type="date"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    color: var(--ice);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    outline: none;
+    color-scheme: dark;
+  }
+
+  .leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  .leaderboard-table th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .leaderboard-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid rgba(27,58,75,0.5);
+    vertical-align: middle;
+  }
+  .leaderboard-table tr:hover td { background: var(--surface2); }
+  .rank-badge {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 28px;
+  }
+  .rank-badge.gold   { color: #F1C40F; }
+  .rank-badge.silver { color: #BDC3C7; }
+  .rank-badge.bronze { color: #E67E22; }
+  .score-chip {
+    display: inline-block;
+    background: var(--steel);
+    color: #fff;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .uid-cell {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+  .device-chip {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+  }
+  .empty-state .emoji { font-size: 2rem; margin-bottom: 0.75rem; }
+
+  /* ── Toast ───────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 50;
+    max-width: 320px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.ok   { border-color: var(--teal); color: var(--teal); }
+  #toast.err  { border-color: var(--red);  color: var(--red);  }
+
+  /* ── Loading state ───────────────────────────────── */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--steel);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Words preview ───────────────────────────────── */
+  .words-preview {
+    display: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .words-preview.show { display: block; }
+  .words-preview h4 {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .words-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .word-chip {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .word-chip.long { color: var(--amber); border-color: var(--amber); }
+</style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div id="login-box">
+    <div class="logo">💧 DROPLET</div>
+    <div class="sub">Admin Dashboard</div>
+    <input type="password" id="pw-input" placeholder="Password" autocomplete="current-password">
+    <button onclick="checkLogin()">Enter</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">💧 DROPLET <span>ADMIN</span></div>
+  <nav>
+    <button class="active" data-panel="puzzles" onclick="switchPanel(this)">Puzzles</button>
+    <button data-panel="leaderboard" onclick="switchPanel(this)">Leaderboard</button>
+  </nav>
+  <div class="dict-status">
+    <div class="dict-dot" id="dict-dot"></div>
+    <span id="dict-status-text">Loading dictionary…</span>
+  </div>
+</header>
+
+<main>
+  <!-- Sidebar: calendar + stats -->
+  <aside>
+    <div>
+      <div class="calendar-nav">
+        <button onclick="calPrev()">‹</button>
+        <div class="calendar-month" id="cal-month"></div>
+        <button onclick="calNext()">›</button>
+      </div>
+      <div class="calendar-grid" id="cal-grid"></div>
+    </div>
+
+    <div class="sidebar-section" id="today-stats">
+      <h3>Today</h3>
+      <div class="stat-row">
+        <span class="stat-label">Players</span>
+        <span class="stat-val" id="stat-players">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Top score</span>
+        <span class="stat-val" id="stat-top">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Avg score</span>
+        <span class="stat-val" id="stat-avg">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Puzzle #</span>
+        <span class="stat-val" id="stat-puznum">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Upcoming</h3>
+      <div id="upcoming-list" style="font-size:0.78rem;line-height:1.8;">
+        <span style="color:var(--muted);font-family:var(--mono);font-size:0.72rem;">Loading…</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content panels -->
+  <div class="content-panel">
+
+    <!-- Panel: Puzzles -->
+    <div class="panel-section active" id="panel-puzzles">
+
+      <div class="section-header">
+        <h2>Edit Puzzle</h2>
+        <span class="date-label" id="selected-date-label">Select a date</span>
+      </div>
+
+      <div class="puzzle-editor">
+        <!-- Live tile preview -->
+        <div class="letter-entry">
+          <div class="letter-tiles">
+            <div class="letter-tile c1" id="tile-c1"><span id="tile-c1-txt">—</span><span class="tile-label">C1</span></div>
+            <div class="letter-tile v"  id="tile-v" ><span id="tile-v-txt" >—</span><span class="tile-label">VOW</span></div>
+            <div class="letter-tile c2" id="tile-c2"><span id="tile-c2-txt">—</span><span class="tile-label">C2</span></div>
+          </div>
+        </div>
+
+        <!-- Inputs -->
+        <div class="letter-input-group">
+          <div class="input-row">
+            <label>Consonant 1</label>
+            <input type="text" id="inp-c1" maxlength="1" placeholder="R" oninput="onLetterInput()">
+          </div>
+          <div class="input-row">
+            <label>Vowel</label>
+            <input type="text" id="inp-v" maxlength="1" placeholder="A" oninput="onLetterInput()">
+          </div>
+          <div class="input-row">
+            <label>Consonant 2</label>
+            <input type="text" id="inp-c2" maxlength="1" placeholder="B" oninput="onLetterInput()">
+          </div>
+        </div>
+
+        <!-- Validation bar -->
+        <div class="validation-bar" id="val-bar">
+          <span class="val-icon" id="val-icon">💡</span>
+          <span class="val-text idle" id="val-text">Enter 3 letters to validate</span>
+          <div class="spinner" id="val-spinner" style="display:none;margin-left:auto;"></div>
+        </div>
+        <div class="word-count-bar"><div class="word-count-fill" id="word-fill" style="width:0%"></div></div>
+
+        <!-- Word preview -->
+        <div class="words-preview" id="words-preview">
+          <h4>Sample words (<span id="words-preview-count">0</span> total 4+ letter words found)</h4>
+          <div class="words-grid" id="words-grid"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="puzzle-actions">
+          <button class="btn btn-primary" id="btn-save" onclick="savePuzzle()" disabled>
+            💾 Save Puzzle
+          </button>
+          <button class="btn btn-secondary" onclick="randomSuggest()">
+            🎲 Suggest Random
+          </button>
+          <button class="btn btn-secondary" onclick="toggleWordPreview()">
+            📋 Preview Words
+          </button>
+          <button class="btn btn-danger" id="btn-delete" onclick="deletePuzzle()" style="display:none">
+            🗑 Delete
+          </button>
+          <div class="save-feedback" id="save-feedback"></div>
+        </div>
+      </div>
+
+      <!-- Bulk generator -->
+      <div class="bulk-section">
+        <h3>Bulk Generate</h3>
+        <p>Auto-generate validated puzzles for the next N days starting from the selected date (skips dates that already have puzzles).</p>
+        <div class="bulk-controls">
+          <label style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);">Days:</label>
+          <input type="number" id="bulk-days" value="7" min="1" max="30">
+          <button class="btn btn-teal" onclick="bulkGenerate()">
+            ⚡ Generate
+          </button>
+        </div>
+        <div class="bulk-log" id="bulk-log"></div>
+      </div>
+    </div>
+
+    <!-- Panel: Leaderboard -->
+    <div class="panel-section" id="panel-leaderboard">
+      <div class="section-header">
+        <h2>Leaderboard</h2>
+        <span class="date-label" id="lb-date-label">Today</span>
+      </div>
+
+      <div class="leaderboard-controls">
+        <input type="date" id="lb-date-input" oninput="loadLeaderboard()">
+        <button class="btn btn-secondary" onclick="loadLeaderboard(true)">
+          📅 Today
+        </button>
+        <button class="btn btn-secondary" id="lb-refresh" onclick="loadLeaderboard()">
+          ↻ Refresh
+        </button>
+        <span style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);" id="lb-count"></span>
+      </div>
+
+      <div id="lb-table-wrap">
+        <div class="empty-state">
+          <div class="emoji">🏆</div>
+          Select a date to load the leaderboard
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, doc, setDoc, getDoc, deleteDoc,
+  getDocs, query, where, orderBy, limit, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ── Config ────────────────────────────────────────────────────
+const ADMIN_PASSWORD = "droplet-admin-2024"; // Change before deploying
+const LAUNCH_DATE    = "2026-06-01";
+const MIN_WORDS      = 1300;
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCuVqYaV7r04ZkUsNU-zFS9eCMQFitYheM",
+  authDomain:        "droplet-stats-7112c.firebaseapp.com",
+  projectId:         "droplet-stats-7112c",
+  storageBucket:     "droplet-stats-7112c.firebasestorage.app",
+  messagingSenderId: "724486498795",
+  appId:             "1:724486498795:web:89e657469f70ba70f791ae"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── State ─────────────────────────────────────────────────────
+let W = null;               // dictionary Set
+let puzzleCache = {};       // dateKey → {letters} or null
+let selectedDate = null;    // currently selected YYYY-MM-DD
+let calYear, calMonth;      // current calendar view
+let wordPreviewOpen = false;
+let lastValidWords = [];
+
+// ── Password check ────────────────────────────────────────────
+window.checkLogin = function() {
+  const val = document.getElementById('pw-input').value;
+  if (val === ADMIN_PASSWORD) {
+    document.getElementById('login-overlay').style.display = 'none';
+    init();
+  } else {
+    document.getElementById('login-error').textContent = 'Incorrect password';
+    document.getElementById('pw-input').value = '';
+  }
+};
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.checkLogin();
+});
+
+// ── Init ──────────────────────────────────────────────────────
+async function init() {
+  const now = new Date();
+  calYear  = now.getFullYear();
+  calMonth = now.getMonth();
+  selectedDate = getUTCDateKey();
+  document.getElementById('selected-date-label').textContent = formatDisplay(selectedDate);
+  renderCalendar();
+  loadTodayStats();
+  loadUpcoming();
+  loadDictionary();
+  // Set leaderboard date default
+  document.getElementById('lb-date-input').value = selectedDate;
+}
+
+// ── Dictionary loader ─────────────────────────────────────────
+// Fetches the dictionary from daily_droplet.html (same directory)
+// so we don't duplicate 1.6MB in this file.
+async function loadDictionary() {
+  try {
+    // Load dictionary from words.js (same directory)
+    // words.js sets the global variable DROPLET_WORDS
+    await new Promise((resolve, reject) => {
+      if (typeof DROPLET_WORDS !== 'undefined') { resolve(); return; }
+      const script = document.createElement('script');
+      script.src = new URL('words.js', window.location.href).href;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Failed to load words.js'));
+      document.head.appendChild(script);
+    });
+    if (typeof DROPLET_WORDS === 'undefined') throw new Error('DROPLET_WORDS not defined after loading words.js');
+    W = new Set(DROPLET_WORDS.split(' '));
+    document.getElementById('dict-dot').classList.add('ready');
+    document.getElementById('dict-status-text').textContent = `${W.size.toLocaleString()} words loaded`;
+    onLetterInput();
+  } catch(e) {
+    console.error('Dictionary load failed:', e);
+    document.getElementById('dict-status-text').textContent = 'Dict load failed: ' + e.message;
+    document.getElementById('dict-dot').style.background = 'var(--red)';
+    document.getElementById('dict-dot').classList.add('ready');
+    W = null;
+  }
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+function getUTCDateKey(d) {
+  d = d || new Date();
+  return d.toISOString().slice(0, 10);
+}
+function getPuzzleNumber(dateKey) {
+  const a = new Date(LAUNCH_DATE + 'T00:00:00Z');
+  const b = new Date(dateKey     + 'T00:00:00Z');
+  return Math.floor((b - a) / 86400000) + 1;
+}
+function formatDisplay(dateKey) {
+  if (!dateKey) return 'Select a date';
+  const d = new Date(dateKey + 'T12:00:00');
+  return d.toLocaleDateString('en-AU', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+}
+function addDays(dateKey, n) {
+  const d = new Date(dateKey + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return getUTCDateKey(d);
+}
+
+function countPotential(letters) {
+  if (!W) return null;
+  const base = letters.map(l => l.toLowerCase());
+  let count = 0;
+  for (const word of W) {
+    if (word.length < base.length + 1) continue;
+    let pos = 0;
+    for (let j = 0; j < word.length; j++) {
+      if (pos < base.length && word[j] === base[pos]) pos++;
+    }
+    if (pos === base.length && word.length >= 4) count++;
+  }
+  return count;
+}
+function getPotentialWords(letters) {
+  if (!W) return [];
+  const base = letters.map(l => l.toLowerCase());
+  const results = [];
+  for (const word of W) {
+    if (word.length < base.length + 1) continue;
+    let pos = 0;
+    for (let j = 0; j < word.length; j++) {
+      if (pos < base.length && word[j] === base[pos]) pos++;
+    }
+    if (pos === base.length) results.push(word);
+  }
+  results.sort((a, b) => a.length - b.length || a.localeCompare(b));
+  return results;
+}
+
+const VOWELS = ['A','E','I','O','U'];
+const C1PT = ['R','T','L','N'];
+const C2PT = ['D','G'];
+const C3PT = ['B','C','M','P'];
+function isVowel(c) { return VOWELS.includes(c.toUpperCase()); }
+function isConsonant(c) { return !isVowel(c) && /^[A-Z]$/i.test(c); }
+
+function pickConsonant() {
+  const r = Math.random();
+  if (r < 0.6) return C1PT[Math.floor(Math.random() * C1PT.length)];
+  if (r < 0.9) return C2PT[Math.floor(Math.random() * C2PT.length)];
+  return C3PT[Math.floor(Math.random() * C3PT.length)];
+}
+function pickVowel() {
+  const r = Math.random();
+  if (r < 0.25) return 'A';
+  if (r < 0.50) return 'E';
+  if (r < 0.70) return 'I';
+  if (r < 0.90) return 'O';
+  return 'U';
+}
+function randomBase() {
+  let c1, c2, attempts = 0;
+  c1 = pickConsonant();
+  do {
+    c2 = pickConsonant();
+    if (c2 === c1) continue;
+    if (C3PT.includes(c1) && !C1PT.includes(c2)) continue;
+    if (C2PT.includes(c1) && (C2PT.includes(c2) || C3PT.includes(c2))) continue;
+    break;
+  } while (++attempts < 30);
+  const v = pickVowel();
+  return [c1, v, c2];
+}
+
+// ── Calendar ──────────────────────────────────────────────────
+async function renderCalendar() {
+  const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('cal-month').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'cal-header'; h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const days  = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = getUTCDateKey();
+
+  // Fill empties
+  for (let i = 0; i < first; i++) {
+    const e = document.createElement('div'); e.className = 'cal-day empty'; grid.appendChild(e);
+  }
+
+  // Batch-fetch puzzles for this month if not cached
+  const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  await fetchMonthPuzzles(calYear, calMonth);
+
+  for (let d = 1; d <= days; d++) {
+    const dateKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    el.textContent = d;
+    if (dateKey === today) el.classList.add('today');
+    if (dateKey === selectedDate) el.classList.add('selected');
+    if (puzzleCache[dateKey]) el.classList.add('has-puzzle');
+    if (dateKey < today) el.classList.add('past');
+    el.onclick = () => selectDate(dateKey);
+    grid.appendChild(el);
+  }
+}
+
+async function fetchMonthPuzzles(year, month) {
+  // We do individual gets via cache; no compound query needed
+  // Mark them as fetched so we don't re-fetch on re-render
+  const days = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= days; d++) {
+    const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (dateKey in puzzleCache) continue;
+    try {
+      const snap = await getDoc(doc(db, 'daily_puzzles', dateKey));
+      puzzleCache[dateKey] = snap.exists() ? snap.data() : null;
+    } catch(e) { puzzleCache[dateKey] = null; }
+  }
+}
+
+window.calPrev = function() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); };
+window.calNext = function() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); };
+
+async function selectDate(dateKey) {
+  selectedDate = dateKey;
+  document.getElementById('selected-date-label').textContent = formatDisplay(dateKey);
+  renderCalendar();
+  await loadPuzzleForDate(dateKey);
+}
+
+async function loadPuzzleForDate(dateKey) {
+  // Ensure cached
+  if (!(dateKey in puzzleCache)) {
+    try {
+      const snap = await getDoc(doc(db, 'daily_puzzles', dateKey));
+      puzzleCache[dateKey] = snap.exists() ? snap.data() : null;
+    } catch(e) { puzzleCache[dateKey] = null; }
+  }
+
+  const existing = puzzleCache[dateKey];
+  const deleteBtn = document.getElementById('btn-delete');
+
+  if (existing && existing.letters) {
+    const letters = existing.letters.toUpperCase().split('');
+    document.getElementById('inp-c1').value = letters[0] || '';
+    document.getElementById('inp-v').value  = letters[1] || '';
+    document.getElementById('inp-c2').value = letters[2] || '';
+    deleteBtn.style.display = '';
+  } else {
+    document.getElementById('inp-c1').value = '';
+    document.getElementById('inp-v').value  = '';
+    document.getElementById('inp-c2').value = '';
+    deleteBtn.style.display = 'none';
+  }
+  onLetterInput();
+}
+
+// ── Letter input + validation ─────────────────────────────────
+let valTimer = null;
+window.onLetterInput = function() {
+  const c1 = document.getElementById('inp-c1').value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,1);
+  const v  = document.getElementById('inp-v').value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,1);
+  const c2 = document.getElementById('inp-c2').value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,1);
+
+  // Sync tile display
+  document.getElementById('tile-c1-txt').textContent = c1 || '—';
+  document.getElementById('tile-v-txt').textContent  = v  || '—';
+  document.getElementById('tile-c2-txt').textContent = c2 || '—';
+
+  if (!c1 || !v || !c2) {
+    setValBar('idle', '💡', 'Enter 3 letters to validate');
+    document.getElementById('word-fill').style.width = '0%';
+    document.getElementById('word-fill').style.background = 'var(--red)';
+    document.getElementById('btn-save').disabled = true;
+    return;
+  }
+
+  // Basic format checks
+  if (!isConsonant(c1)) { setValBar('err', '❌', `"${c1}" is not a valid consonant`); return; }
+  if (!isVowel(v))      { setValBar('err', '❌', `"${v}" is not a vowel (A E I O U)`); return; }
+  if (!isConsonant(c2)) { setValBar('err', '❌', `"${c2}" is not a valid consonant`); return; }
+  if (c1 === c2)        { setValBar('err', '❌', `Consonants must be different`); return; }
+
+  if (!W) {
+    setValBar('warn', '⚠️', 'Dictionary not loaded — cannot count words');
+    document.getElementById('btn-save').disabled = !selectedDate;
+    return;
+  }
+
+  // Debounce heavy count
+  clearTimeout(valTimer);
+  setValBar('idle', '⏳', 'Counting possible words…');
+  document.getElementById('val-spinner').style.display = '';
+  document.getElementById('btn-save').disabled = true;
+
+  valTimer = setTimeout(() => {
+    const letters = [c1, v, c2];
+    const count = countPotential(letters);
+    lastValidWords = getPotentialWords(letters);
+    document.getElementById('val-spinner').style.display = 'none';
+
+    const pct = Math.min(100, (count / MIN_WORDS) * 100);
+    const fill = document.getElementById('word-fill');
+    fill.style.width = pct + '%';
+    fill.style.background = count >= MIN_WORDS ? 'var(--teal)' : count >= 800 ? 'var(--amber)' : 'var(--red)';
+
+    if (count >= MIN_WORDS) {
+      setValBar('ok', '✅', `${count.toLocaleString()} possible words — valid puzzle`);
+      document.getElementById('btn-save').disabled = !selectedDate;
+    } else {
+      setValBar('err', '❌', `Only ${count.toLocaleString()} possible words (min ${MIN_WORDS.toLocaleString()}) — choose different letters`);
+      document.getElementById('btn-save').disabled = true;
+    }
+
+    // Update preview if open
+    if (wordPreviewOpen) renderWordPreview();
+  }, 300);
+};
+
+function setValBar(type, icon, text) {
+  document.getElementById('val-icon').textContent = icon;
+  const t = document.getElementById('val-text');
+  t.textContent = text;
+  t.className = 'val-text ' + type;
+}
+
+// ── Word preview ──────────────────────────────────────────────
+window.toggleWordPreview = function() {
+  wordPreviewOpen = !wordPreviewOpen;
+  if (wordPreviewOpen) renderWordPreview();
+  const el = document.getElementById('words-preview');
+  el.classList.toggle('show', wordPreviewOpen);
+};
+
+function renderWordPreview() {
+  const words = lastValidWords;
+  document.getElementById('words-preview-count').textContent = words.filter(w => w.length >= 4).length;
+  const grid = document.getElementById('words-grid');
+  grid.innerHTML = '';
+  const sample = words.slice(0, 80);
+  sample.forEach(w => {
+    const chip = document.createElement('span');
+    chip.className = 'word-chip' + (w.length >= 7 ? ' long' : '');
+    chip.textContent = w;
+    grid.appendChild(chip);
+  });
+  if (words.length > 80) {
+    const more = document.createElement('span');
+    more.className = 'word-chip';
+    more.style.color = 'var(--muted)';
+    more.textContent = `+${words.length - 80} more`;
+    grid.appendChild(more);
+  }
+}
+
+// ── Save puzzle ───────────────────────────────────────────────
+window.savePuzzle = async function() {
+  if (!selectedDate) return;
+  const c1 = document.getElementById('inp-c1').value.toUpperCase().trim();
+  const v  = document.getElementById('inp-v').value.toUpperCase().trim();
+  const c2 = document.getElementById('inp-c2').value.toUpperCase().trim();
+  const letters = c1 + v + c2;
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving…';
+
+  try {
+    await setDoc(doc(db, 'daily_puzzles', selectedDate), {
+      letters,
+      puzzleNumber: getPuzzleNumber(selectedDate),
+      dateKey: selectedDate,
+      updatedAt: serverTimestamp()
+    });
+    puzzleCache[selectedDate] = { letters };
+    btn.textContent = '💾 Save Puzzle';
+    document.getElementById('btn-delete').style.display = '';
+    renderCalendar();
+    loadUpcoming();
+    showFeedback('ok', `✓ Saved ${letters} for ${formatDisplay(selectedDate)}`);
+    toast(`Puzzle saved: ${letters}`, 'ok');
+  } catch(e) {
+    btn.textContent = '💾 Save Puzzle';
+    btn.disabled = false;
+    toast('Save failed: ' + e.message, 'err');
+  }
+};
+
+// ── Delete puzzle ─────────────────────────────────────────────
+window.deletePuzzle = async function() {
+  if (!selectedDate || !puzzleCache[selectedDate]) return;
+  if (!confirm(`Delete puzzle for ${formatDisplay(selectedDate)}?`)) return;
+
+  try {
+    await deleteDoc(doc(db, 'daily_puzzles', selectedDate));
+    puzzleCache[selectedDate] = null;
+    document.getElementById('btn-delete').style.display = 'none';
+    renderCalendar();
+    loadUpcoming();
+    toast('Puzzle deleted', 'ok');
+  } catch(e) {
+    toast('Delete failed: ' + e.message, 'err');
+  }
+};
+
+// ── Random suggest ────────────────────────────────────────────
+window.randomSuggest = function() {
+  if (!W) { toast('Dictionary not loaded yet', 'err'); return; }
+  let attempts = 0, base;
+  do {
+    base = randomBase();
+    attempts++;
+  } while (countPotential(base) < MIN_WORDS && attempts < 50);
+
+  document.getElementById('inp-c1').value = base[0];
+  document.getElementById('inp-v').value  = base[1];
+  document.getElementById('inp-c2').value = base[2];
+  onLetterInput();
+};
+
+// ── Bulk generate ─────────────────────────────────────────────
+window.bulkGenerate = async function() {
+  if (!W) { toast('Dictionary not loaded yet', 'err'); return; }
+  if (!selectedDate) { toast('Select a start date first', 'err'); return; }
+
+  const n = parseInt(document.getElementById('bulk-days').value) || 7;
+  const log = document.getElementById('bulk-log');
+  log.innerHTML = '';
+  log.classList.add('show');
+
+  const btn = document.querySelector('.btn-teal');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  let saved = 0;
+  for (let i = 0; i < n; i++) {
+    const dateKey = addDays(selectedDate, i);
+
+    // Skip if puzzle already exists
+    if (!(dateKey in puzzleCache)) {
+      try {
+        const snap = await getDoc(doc(db, 'daily_puzzles', dateKey));
+        puzzleCache[dateKey] = snap.exists() ? snap.data() : null;
+      } catch(e) { puzzleCache[dateKey] = null; }
+    }
+
+    if (puzzleCache[dateKey]) {
+      const letters = puzzleCache[dateKey].letters || '???';
+      addLog(log, 'skip', `${dateKey}  ⟶  ${letters}  (already set, skipped)`);
+      continue;
+    }
+
+    // Generate valid base
+    let base, attempts = 0;
+    do { base = randomBase(); attempts++; }
+    while (countPotential(base) < MIN_WORDS && attempts < 50);
+
+    const letters = base.join('');
+    const count = countPotential(base);
+
+    try {
+      await setDoc(doc(db, 'daily_puzzles', dateKey), {
+        letters,
+        puzzleNumber: getPuzzleNumber(dateKey),
+        dateKey,
+        updatedAt: serverTimestamp()
+      });
+      puzzleCache[dateKey] = { letters };
+      saved++;
+      addLog(log, 'ok', `${dateKey}  ⟶  ${letters}  (${count.toLocaleString()} words)`);
+    } catch(e) {
+      addLog(log, 'skip', `${dateKey}  ⟶  ERROR: ${e.message}`);
+    }
+  }
+
+  addLog(log, 'done', `Done — ${saved} puzzles saved.`);
+  btn.disabled = false;
+  btn.textContent = '⚡ Generate';
+  renderCalendar();
+  loadUpcoming();
+};
+
+function addLog(log, type, msg) {
+  const line = document.createElement('div');
+  line.className = 'log-' + type;
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── Today stats ───────────────────────────────────────────────
+async function loadTodayStats() {
+  const today = getUTCDateKey();
+  document.getElementById('stat-puznum').textContent = '#' + getPuzzleNumber(today);
+  try {
+    const q = query(
+      collection(db, 'daily_games'),
+      where('date', '==', today),
+      limit(500)
+    );
+    const snap = await getDocs(q);
+    const docs = snap.docs.map(d => d.data());
+    const scores = docs.map(d => d.score || 0).filter(s => s > 0);
+    document.getElementById('stat-players').textContent = docs.length;
+    document.getElementById('stat-top').textContent = scores.length ? Math.max(...scores) : '—';
+    document.getElementById('stat-avg').textContent = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : '—';
+  } catch(e) {
+    document.getElementById('stat-players').textContent = '—';
+  }
+}
+
+// ── Upcoming puzzles list ─────────────────────────────────────
+async function loadUpcoming() {
+  const list = document.getElementById('upcoming-list');
+  list.innerHTML = '<span style="color:var(--muted);font-family:var(--mono);font-size:0.72rem;">Loading…</span>';
+  const today = getUTCDateKey();
+  const items = [];
+  for (let i = 0; i < 7; i++) {
+    const dateKey = addDays(today, i);
+    if (!(dateKey in puzzleCache)) {
+      try {
+        const snap = await getDoc(doc(db, 'daily_puzzles', dateKey));
+        puzzleCache[dateKey] = snap.exists() ? snap.data() : null;
+      } catch(e) { puzzleCache[dateKey] = null; }
+    }
+    items.push({ dateKey, data: puzzleCache[dateKey] });
+  }
+  list.innerHTML = '';
+  items.forEach(({ dateKey, data }) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:0.2rem 0;cursor:pointer;border-radius:3px;padding:0.2rem 0.3rem;';
+    row.onmouseover = () => row.style.background = 'var(--border)';
+    row.onmouseout  = () => row.style.background = '';
+    row.onclick = () => { selectDate(dateKey); switchPanelById('puzzles'); };
+    const d = new Date(dateKey + 'T12:00:00');
+    const label = d.toLocaleDateString('en-AU', { weekday:'short', month:'short', day:'numeric' });
+    const isToday = dateKey === today;
+    row.innerHTML = `
+      <span style="font-family:var(--mono);font-size:0.72rem;color:${isToday?'var(--ice)':'var(--muted)'}">
+        ${isToday ? '▶ ' : ''}${label}
+      </span>
+      <span style="font-family:var(--mono);font-size:0.78rem;font-weight:700;color:${data?'var(--teal)':'var(--red)'}">
+        ${data ? data.letters : 'UNSET'}
+      </span>`;
+    list.appendChild(row);
+  });
+}
+
+// ── Leaderboard ───────────────────────────────────────────────
+window.loadLeaderboard = async function(forceToday) {
+  const input = document.getElementById('lb-date-input');
+  if (forceToday) { input.value = getUTCDateKey(); }
+  const dateKey = input.value || getUTCDateKey();
+  document.getElementById('lb-date-label').textContent = formatDisplay(dateKey);
+  document.getElementById('lb-count').textContent = '';
+
+  const wrap = document.getElementById('lb-table-wrap');
+  wrap.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto 1rem;width:24px;height:24px;border-width:3px;"></div>Loading…</div>';
+
+  try {
+    const q = query(
+      collection(db, 'daily_leaderboard'),
+      where('date', '==', dateKey),
+      orderBy('score', 'desc'),
+      limit(100)
+    );
+    const snap = await getDocs(q);
+    const rows = snap.docs.map(d => d.data());
+    document.getElementById('lb-count').textContent = `${rows.length} player${rows.length !== 1 ? 's' : ''}`;
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="emoji">🏆</div>No entries for this date yet</div>';
+      return;
+    }
+
+    const table = document.createElement('table');
+    table.className = 'leaderboard-table';
+    table.innerHTML = `<thead><tr>
+      <th>#</th><th>Score</th><th>Words</th><th>Top Word</th><th>Device</th><th>UID</th><th></th>
+    </tr></thead>`;
+    const tbody = document.createElement('tbody');
+
+    rows.forEach((row, i) => {
+      const rank = i + 1;
+      const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="rank-badge ${rankClass}">${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '#'+rank}</span></td>
+        <td><span class="score-chip">${row.score || 0}</span></td>
+        <td style="font-family:var(--mono);font-size:0.8rem">${row.wordsScored || 0}</td>
+        <td style="font-family:var(--mono);font-size:0.8rem;color:var(--ice)">${row.topWord || '—'}</td>
+        <td><span class="device-chip">${row.device || '?'}</span></td>
+        <td class="uid-cell">${(row.uid || '—').slice(0, 8)}…</td>
+        <td>
+          <button class="btn btn-danger" style="padding:0.25rem 0.6rem;font-size:0.72rem;"
+            onclick="deleteScore('${dateKey}', '${row.uid}')">
+            🗑
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.innerHTML = '';
+    wrap.appendChild(table);
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div>${e.message}</div>`;
+  }
+};
+
+// ── Delete score (anti-cheat) ─────────────────────────────────
+window.deleteScore = async function(dateKey, uid) {
+  if (!confirm(`Remove this score from the leaderboard?\n\nUID: ${uid}`)) return;
+  try {
+    const docId = `${dateKey}_${uid}`;
+    await deleteDoc(doc(db, 'daily_leaderboard', docId));
+    await deleteDoc(doc(db, 'daily_games', docId));
+    toast('Score removed', 'ok');
+    loadLeaderboard();
+  } catch(e) {
+    toast('Delete failed: ' + e.message, 'err');
+  }
+};
+
+// ── Panel switching ───────────────────────────────────────────
+window.switchPanel = function(btn) {
+  document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  switchPanelById(btn.dataset.panel);
+};
+function switchPanelById(id) {
+  document.querySelectorAll('.panel-section').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelectorAll('header nav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.panel === id);
+  });
+  if (id === 'leaderboard') loadLeaderboard();
+}
+
+// ── Feedback / Toast ──────────────────────────────────────────
+function showFeedback(type, msg) {
+  const el = document.getElementById('save-feedback');
+  el.textContent = msg;
+  el.className = 'save-feedback show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+window.toast = toast;
+</script>
+</body>
+</html>
