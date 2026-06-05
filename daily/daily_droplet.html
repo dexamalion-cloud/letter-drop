@@ -488,6 +488,10 @@ window._daily = {
   getUTCDateKey, getPuzzleNumber, DAILY_LAUNCH_DATE
 };
 
+// Expose config constants to global scope (module-scoped vars aren't visible to regular scripts)
+window.GAME_MODE = GAME_MODE;
+window.DAILY_LAUNCH_DATE = DAILY_LAUNCH_DATE;
+
 // Expose to game
 window._dropletTrackGame = trackGame;
 window._dropletTrackHighScore = trackHighScore;
@@ -1489,7 +1493,7 @@ function buildKeyboard(){
 
 function formatTime(s){return Math.floor(s/60)+":"+(s%60<10?"0":"")+s%60;}
 function updateTimer(){
-  if(GAME_MODE === "unlimited") return;
+  if(window.GAME_MODE === "unlimited") return;
   timeLeft--;
   const el=document.getElementById("timer-display");
   el.textContent=formatTime(timeLeft);
@@ -1648,7 +1652,7 @@ async function newGame(){
   document.getElementById("used-words").innerHTML="";
   document.getElementById("word-zone").classList.remove("correct","broken");
 
-  if(GAME_MODE === "unlimited"){
+  if(window.GAME_MODE === "unlimited"){
     // Unlimited mode: hide timer label and 1:30 display, show only the puzzle date
     document.getElementById("timer-wrap").style.display="none";
     document.getElementById("timer-label").style.display="none";
@@ -1707,7 +1711,7 @@ function finishGame(){
 // Uses both beforeunload and visibilitychange for maximum coverage.
 let _autoSaveDone = false;
 function _autoSave(){
-  if(!gameActive || _autoSaveDone || GAME_MODE !== "unlimited") return;
+  if(!gameActive || _autoSaveDone || window.GAME_MODE !== "unlimited") return;
   if(!_dailyDateKey || score === 0) return; // nothing worth saving
   _autoSaveDone = true;
   gameActive = false;
@@ -1926,7 +1930,7 @@ endGame=function(){
   _origEndGame();
   // Set end-screen title based on mode
   const titleEl = document.getElementById('game-over-title');
-  if(titleEl) titleEl.textContent = GAME_MODE === "unlimited" ? "Nice work! 💧" : "Time's Up!";
+  if(titleEl) titleEl.textContent = window.GAME_MODE === "unlimited" ? "Nice work! 💧" : "Time's Up!";
   checkMedalAndCelebrate(score);
   saveScore(score,base);
   // Firebase tracking — queue if module not ready
