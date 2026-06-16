@@ -1530,13 +1530,22 @@ async function newGame(){
   }
   base = dailyBase;
 
-  // Set par score: use Firebase value if available, else calculate on the fly
+  // Set par score: use Firebase value if available, else calculate inline
   if(fetchedParScore && fetchedParScore > 0){
     _dailyParScore = fetchedParScore;
   } else {
-    // Fallback: calculate from potential word count × 2pts average
-    const wordCount = countPotential(base);
-    _dailyParScore = Math.round(wordCount * 2);
+    // Fallback: count potential words inline (synchronous, not using the deferred countPotential)
+    const bl = base.map(l=>l.toLowerCase());
+    let wCount = 0;
+    for(const word of W){
+      if(word.length < bl.length + 1) continue;
+      let pos = 0;
+      for(let j = 0; j < word.length; j++){
+        if(pos < bl.length && word[j] === bl[pos]) pos++;
+      }
+      if(pos === bl.length) wCount++;
+    }
+    _dailyParScore = Math.round(wCount * 2);
   }
 
   used=new Set();score=0;chain=0;lastWasValid=false;addedCount=0;
