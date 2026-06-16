@@ -781,7 +781,7 @@ function autoCheck(){
     showHint(w+" \u2014 add a letter to score","");
   } else if(W.has(w)&&addedCount>0){
     const isChainBonus=lastWasValid&&addedCount>0;
-    const lengthBonus=w.length>9?3:w.length>6?1:0;
+    const lengthBonus=w.length>9?6:w.length>6?2:0;
     const toughLetters=/[jxqz]/g;
     const toughCount=(w.match(toughLetters)||[]).length;
     const toughBonus=toughCount*3;
@@ -1532,7 +1532,7 @@ async function newGame(){
 
   // Set par score: use Firebase value if available, else calculate inline
   if(fetchedParScore && fetchedParScore > 0){
-    _dailyParScore = fetchedParScore;
+    _dailyParScore = Math.min(500, fetchedParScore);
   } else {
     // Fallback: count potential words inline (synchronous, not using the deferred countPotential)
     const bl = base.map(l=>l.toLowerCase());
@@ -1545,7 +1545,7 @@ async function newGame(){
       }
       if(pos === bl.length) wCount++;
     }
-    _dailyParScore = Math.round(wCount * 2);
+    _dailyParScore = Math.min(500, Math.round(wCount * 2));
   }
 
   used=new Set();score=0;chain=0;lastWasValid=false;addedCount=0;
