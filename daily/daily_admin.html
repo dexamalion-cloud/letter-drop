@@ -1190,13 +1190,15 @@ window.savePuzzle = async function() {
   btn.textContent = '⏳ Saving…';
 
   try {
+    const parScore = W ? Math.round(countPotential([c1,v,c2]) * 2) : 0;
     await setDoc(doc(db, 'daily_puzzles', selectedDate), {
       letters,
       puzzleNumber: getPuzzleNumber(selectedDate),
+      parScore,
       dateKey: selectedDate,
       updatedAt: serverTimestamp()
     });
-    puzzleCache[selectedDate] = { letters };
+    puzzleCache[selectedDate] = { letters, parScore };
     btn.textContent = '💾 Save Puzzle';
     document.getElementById('btn-delete').style.display = '';
     renderCalendar();
@@ -1286,10 +1288,11 @@ window.bulkGenerate = async function() {
       await setDoc(doc(db, 'daily_puzzles', dateKey), {
         letters,
         puzzleNumber: getPuzzleNumber(dateKey),
+        parScore: Math.round(count * 2),
         dateKey,
         updatedAt: serverTimestamp()
       });
-      puzzleCache[dateKey] = { letters };
+      puzzleCache[dateKey] = { letters, parScore: Math.round(count * 2) };
       saved++;
       addLog(log, 'ok', `${dateKey}  ⟶  ${letters}  (${count.toLocaleString()} words)`);
     } catch(e) {

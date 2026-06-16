@@ -34,6 +34,12 @@ html{overscroll-behavior:none}
 @keyframes pulse{from{opacity:1}to{opacity:0.4}}
 #score-label{font-size:11px;color:#1B3A4B;letter-spacing:1px;text-transform:uppercase;text-align:right}
 #score-value{font-size:32px;font-weight:800;font-family:'Space Mono',monospace;text-align:right;color:#fff}
+#rank-display{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;text-align:right;letter-spacing:0.5px;margin-top:2px;min-height:14px;transition:all 0.3s ease}
+#rank-display.rank-iron    {color:#8B9EC4}
+#rank-display.rank-bronze  {color:#CD7F32}
+#rank-display.rank-silver  {color:#A8C0CC}
+#rank-display.rank-gold    {color:#F1C40F}
+#rank-display.rank-diamond {color:#85C1E9;text-shadow:0 0 8px rgba(133,193,233,0.6)}
 #game-over-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center}
 #game-over-overlay.show{display:flex}
 #game-over-box{background:#0E1C2A;border:2px solid #2980B9;border-radius:16px;padding:2rem 2.5rem;text-align:center;max-width:320px;width:90%;animation:popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275)}
@@ -344,7 +350,10 @@ async function fetchDailyPuzzle(dateKey){
     if(snap.exists()){
       const data = snap.data();
       if(data.letters && typeof data.letters === 'string' && data.letters.length === 3){
-        return data.letters.toUpperCase().split('');
+        return {
+          letters: data.letters.toUpperCase().split(''),
+          parScore: data.parScore || null
+        };
       }
     }
   } catch(e){ }
@@ -570,7 +579,7 @@ if(window._dropletPendingGame){
   </div>
   <div id="header-right">
     <div id="timer-wrap" style="display:none"><div id="timer-label">TIME</div><div id="timer-display">1:30</div><div id="puzzle-date-display" style="display:none;font-family:'Space Mono',monospace;font-size:11px;color:#4A7A99;text-align:right;margin-top:2px;letter-spacing:0.5px"></div></div>
-    <div><div id="score-label">Score</div><div id="score-value">0</div></div>
+    <div><div id="score-label">Score</div><div id="score-value">0</div><div id="rank-display"></div></div>
   </div>
 </div>
 <div id="chain-bar"><div id="chain-display">chain: 0</div></div>
@@ -722,6 +731,33 @@ function updateChainDisplay(){
   if(chain===0){el.textContent="Chain: 0";el.className="";}
   else{el.textContent="Chain: "+chain+" \uD83D\uDD25";el.className="active";}
 }
+
+// ── Rank system ──────────────────────────────────────────────
+const RANKS=[
+  {key:'iron',    label:'⚪ Iron',    pct:0.10},
+  {key:'bronze',  label:'🥉 Bronze',  pct:0.25},
+  {key:'silver',  label:'🥈 Silver',  pct:0.50},
+  {key:'gold',    label:'🥇 Gold',    pct:0.60},
+  {key:'diamond', label:'💎 Diamond', pct:0.70},
+];
+function getCurrentRank(s){
+  if(!_dailyParScore||s<=0) return null;
+  let r=null;
+  for(const x of RANKS){ if(s>=_dailyParScore*x.pct) r=x; }
+  return r;
+}
+function updateRankDisplay(){
+  const el=document.getElementById('rank-display');
+  if(!el) return;
+  const r=getCurrentRank(score);
+  if(!r){el.textContent='';el.className='';return;}
+  if(el.textContent!==r.label){
+    el.textContent=r.label;
+    el.className='rank-'+r.key;
+    el.style.transform='scale(1.25)';
+    setTimeout(()=>{el.style.transform='';},300);
+  }
+}
 document.addEventListener("animationend",e=>{if(e.target.id==="chain-display")e.target.classList.remove("bump");});
 
 
@@ -752,6 +788,7 @@ function autoCheck(){
     const points=(isChainBonus?1+(addedCount*2):1)+lengthBonus+toughBonus;
     score+=points;
     document.getElementById("score-value").textContent=score;
+    updateRankDisplay();
     used.add(w);z.classList.add("correct");lastWasValid=true;
       const _wd=document.getElementById("word-display");if(_wd){_wd.className="success";setTimeout(()=>{if(_wd)_wd.className="";},600);}
     if(isChainBonus){
@@ -1404,6 +1441,7 @@ function endGame(){
 // and a play-once gate.
 let _dailyDateKey = null;
 let _dailyPuzzleNumber = 0;
+let _dailyParScore = 0;
 
 // Show the "already played" screen by populating the game-over overlay
 // with the prior result and skipping a fresh game.
@@ -1475,8 +1513,12 @@ async function newGame(){
   }
 
   // Fetch today's puzzle (Firebase → deterministic fallback)
-  let dailyBase = await window._daily.fetchDailyPuzzle(_dailyDateKey);
-  if(!dailyBase){
+  let fetchResult = await window._daily.fetchDailyPuzzle(_dailyDateKey);
+  let dailyBase, fetchedParScore = null;
+  if(fetchResult){
+    dailyBase = fetchResult.letters;
+    fetchedParScore = fetchResult.parScore;
+  } else {
     dailyBase = window._daily.getDeterministicPuzzle(_dailyDateKey);
     // Sanity check: if the fallback somehow gives a low-word-count base,
     // keep nudging the seed forward until it clears 1300. Same letters for everyone.
@@ -1488,10 +1530,20 @@ async function newGame(){
   }
   base = dailyBase;
 
+  // Set par score: use Firebase value if available, else calculate on the fly
+  if(fetchedParScore && fetchedParScore > 0){
+    _dailyParScore = fetchedParScore;
+  } else {
+    // Fallback: calculate from potential word count × 2pts average
+    const wordCount = countPotential(base);
+    _dailyParScore = Math.round(wordCount * 2);
+  }
+
   used=new Set();score=0;chain=0;lastWasValid=false;addedCount=0;
   document.getElementById("score-value").textContent="0";
   document.getElementById("used-words").innerHTML="";
   document.getElementById("word-zone").classList.remove("correct","broken");
+  const _rd=document.getElementById('rank-display');if(_rd){_rd.textContent='';_rd.className='';}
 
   if(GAME_MODE === "unlimited"){
     // Unlimited mode: hide timer label and 1:30 display, show only the puzzle date
