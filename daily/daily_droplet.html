@@ -734,11 +734,11 @@ function updateChainDisplay(){
 
 // ── Rank system ──────────────────────────────────────────────
 const RANKS=[
-  {key:'iron',    label:'⚪ Iron',    pct:0.10},
-  {key:'bronze',  label:'🥉 Bronze',  pct:0.25},
-  {key:'silver',  label:'🥈 Silver',  pct:0.50},
-  {key:'gold',    label:'🥇 Gold',    pct:0.60},
-  {key:'diamond', label:'💎 Diamond', pct:0.70},
+  {key:'iron',    label:'⚪ Iron',    pct:0.05},
+  {key:'bronze',  label:'🥉 Bronze',  pct:0.125},
+  {key:'silver',  label:'🥈 Silver',  pct:0.25},
+  {key:'gold',    label:'🥇 Gold',    pct:0.30},
+  {key:'diamond', label:'💎 Diamond', pct:0.35},
 ];
 function getCurrentRank(s){
   if(!_dailyParScore||s<=0) return null;
