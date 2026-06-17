@@ -40,6 +40,11 @@ html{overscroll-behavior:none}
 #rank-display.rank-silver  {color:#A8C0CC}
 #rank-display.rank-gold    {color:#F1C40F}
 #rank-display.rank-diamond {color:#85C1E9;text-shadow:0 0 8px rgba(133,193,233,0.6)}
+#game-over-rank.rank-iron    {color:#8B9EC4}
+#game-over-rank.rank-bronze  {color:#CD7F32}
+#game-over-rank.rank-silver  {color:#A8C0CC}
+#game-over-rank.rank-gold    {color:#F1C40F}
+#game-over-rank.rank-diamond {color:#85C1E9;text-shadow:0 0 8px rgba(133,193,233,0.6)}
 #rank-display{cursor:pointer}
 #rank-popup{
   display:none;position:fixed;z-index:999;
@@ -554,6 +559,7 @@ if(window._dropletPendingGame){
     <button id="go-words-btn" style="display:none">···</button>
     <div id="game-over-score-label">Final Score</div>
     <div id="game-over-score"></div>
+    <div id="game-over-rank" style="font-size:15px;font-weight:700;font-family:'Space Mono',monospace;margin-bottom:0.75rem;min-height:20px;transition:all 0.3s"></div>
     <div id="medal-msg"></div>
     <div id="daily-streak" style="font-size:14px;color:#85C1E9;margin-bottom:0.5rem;min-height:18px"></div>
     <div id="daily-rank" style="font-size:12px;color:#1B3A4B;margin-bottom:0.75rem;min-height:14px"></div>
@@ -1504,6 +1510,9 @@ function endGame(){
     }
   }
   document.getElementById("game-over-score").textContent=score;
+  // Show rank on end screen
+  const _gorB = document.getElementById('game-over-rank');
+  if(_gorB){ const _rB=getCurrentRank(score); _gorB.textContent=_rB?_rB.label:''; _gorB.className='rank-'+(_rB?_rB.key:''); }
   // Show potential words count
   const potEl=document.getElementById("potential-score");
   const potBtn=document.getElementById("potential-btn");
@@ -1538,6 +1547,9 @@ async function showAlreadyPlayed(prior){
   // Populate the overlay
   document.getElementById('game-over-title').textContent = "Today's puzzle complete";
   document.getElementById('game-over-score').textContent = score;
+  // Show rank on end screen
+  const _gorA = document.getElementById('game-over-rank');
+  if(_gorA){ const _rA=getCurrentRank(score); _gorA.textContent=_rA?_rA.label:''; _gorA.style.color=_rA?'':''; _gorA.className='rank-'+(_rA?_rA.key:''); }
   document.getElementById('daily-puzzle-number').textContent = 'Daily Droplet #'+_dailyPuzzleNumber;
   // Show user's scored words from the prior record if present
   const goWords = document.getElementById('game-over-words');
