@@ -40,6 +40,27 @@ html{overscroll-behavior:none}
 #rank-display.rank-silver  {color:#A8C0CC}
 #rank-display.rank-gold    {color:#F1C40F}
 #rank-display.rank-diamond {color:#85C1E9;text-shadow:0 0 8px rgba(133,193,233,0.6)}
+#rank-display{cursor:pointer}
+#rank-popup{
+  display:none;position:fixed;z-index:999;
+  background:#0E1C2A;border:1px solid #1B3A4B;border-radius:10px;
+  padding:14px 16px;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  font-family:'Space Mono',monospace;font-size:12px;
+}
+#rank-popup.show{display:block}
+.rank-popup-title{color:#4A7A99;font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.rank-popup-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 0;border-bottom:1px solid #1B3A4B;gap:12px;
+}
+.rank-popup-row:last-child{border-bottom:none}
+.rank-popup-name{color:#C8DCEA;font-size:11px}
+.rank-popup-pts{font-size:11px;font-weight:700;text-align:right;white-space:nowrap}
+.rank-popup-row.achieved .rank-popup-name{color:#4A7A99;text-decoration:line-through}
+.rank-popup-row.achieved .rank-popup-pts{color:#4A7A99}
+.rank-popup-row.current .rank-popup-name{color:#fff;font-weight:700}
+.rank-popup-row.next .rank-popup-pts{color:#1ABC9C}
+.rank-popup-row.diamond-row .rank-popup-pts{color:#85C1E9}
 #game-over-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center}
 #game-over-overlay.show{display:flex}
 #game-over-box{background:#0E1C2A;border:2px solid #2980B9;border-radius:16px;padding:2rem 2.5rem;text-align:center;max-width:320px;width:90%;animation:popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275)}
@@ -758,6 +779,67 @@ function updateRankDisplay(){
     setTimeout(()=>{el.style.transform='';},300);
   }
 }
+
+function showRankPopup(){
+  const el=document.getElementById('rank-display');
+  const popup=document.getElementById('rank-popup');
+  if(!el||!popup||!_dailyParScore) return;
+
+  const currentRank=getCurrentRank(score);
+  const currentIdx=currentRank?RANKS.indexOf(currentRank):-1;
+  const nextRank=RANKS[currentIdx+1]||null;
+  const diamondRank=RANKS[RANKS.length-1];
+
+  let html='<div class="rank-popup-title">Rank Progress</div>';
+  RANKS.forEach((r,i)=>{
+    const threshold=Math.ceil(_dailyParScore*r.pct);
+    const achieved=score>=threshold;
+    const isCurrent=r===currentRank;
+    const isNext=r===nextRank;
+    const isDiamond=i===RANKS.length-1;
+    let cls='rank-popup-row';
+    if(achieved&&!isCurrent) cls+=' achieved';
+    if(isCurrent) cls+=' current';
+    if(isNext) cls+=' next';
+    if(isDiamond) cls+=' diamond-row';
+    let ptsLabel;
+    if(achieved){
+      ptsLabel='✓';
+    } else {
+      const needed=threshold-score;
+      ptsLabel='+'+needed+' pts';
+    }
+    html+=`<div class="${cls}">
+      <span class="rank-popup-name">${r.label}</span>
+      <span class="rank-popup-pts">${ptsLabel}</span>
+    </div>`;
+  });
+
+  popup.innerHTML=html;
+
+  // Position near the rank display element
+  const rect=el.getBoundingClientRect();
+  popup.style.right=(window.innerWidth-rect.right)+'px';
+  popup.style.top=(rect.bottom+8)+'px';
+  popup.classList.add('show');
+}
+
+function hideRankPopup(){
+  const popup=document.getElementById('rank-popup');
+  if(popup) popup.classList.remove('show');
+}
+
+// Click rank badge to show popup; click anywhere else to hide
+document.addEventListener('click', e=>{
+  const el=document.getElementById('rank-display');
+  const popup=document.getElementById('rank-popup');
+  if(el&&el.contains(e.target)){
+    if(popup&&popup.classList.contains('show')){ hideRankPopup(); }
+    else { showRankPopup(); }
+  } else if(popup&&!popup.contains(e.target)){
+    hideRankPopup();
+  }
+});
 document.addEventListener("animationend",e=>{if(e.target.id==="chain-display")e.target.classList.remove("bump");});
 
 
@@ -1951,5 +2033,6 @@ document.addEventListener('touchmove', e=>{
   }
 },{passive:false});
 </script>
+<div id="rank-popup"></div>
 </body>
 </html>
