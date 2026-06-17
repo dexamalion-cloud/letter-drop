@@ -776,6 +776,7 @@ function getCurrentRank(s){
 function updateRankDisplay(){
   const el=document.getElementById('rank-display');
   if(!el) return;
+  if(!gameActive) return; // don't clear badge after game ends
   const r=getCurrentRank(score);
   if(!r){el.textContent='';el.className='';return;}
   if(el.textContent!==r.label){
