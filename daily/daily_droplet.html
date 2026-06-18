@@ -676,11 +676,11 @@ if(window._dropletPendingGame){
     <div class="score-section-title">Length Bonus</div>
     <div class="score-rule">
       <div><div class="score-rule-label">7+ letter word</div><div class="score-rule-desc">⭐ Long word bonus</div></div>
-      <div class="score-rule-pts">+1 Point</div>
+      <div class="score-rule-pts">+2 Points</div>
     </div>
     <div class="score-rule">
       <div><div class="score-rule-label">10+ letter word</div><div class="score-rule-desc">⚡ Extra long word bonus</div></div>
-      <div class="score-rule-pts">+3 Points</div>
+      <div class="score-rule-pts">+6 Points</div>
     </div>
 
     <div class="score-section-title">Tough Letter Bonus</div>
@@ -727,8 +727,9 @@ function pickConsonant(){
   return CONSONANTS_3PT[Math.floor(Math.random()*CONSONANTS_3PT.length)];
 }
 let score=0,base=[],letters=[],isBase=[],isLocked=[],used=new Set(),di=null,ghost=null;
+let _removingLetter=false; // true while a tile click-removal is in progress
 let timerInterval=null,timeLeft=90,gameActive=false;
-let chain=0,addedCount=0,lastWasValid=false;
+let chain=0,addedCount=0,lastWasValid=false,_lastScoredWord="";
 let hoverIdx=null; // which gap is currently open
 
 function pickBase(){
@@ -869,7 +870,8 @@ function autoCheck(){
   if(W.has(w)&&addedCount===0){
     showHint(w+" \u2014 add a letter to score","");
   } else if(W.has(w)&&addedCount>0){
-    const isChainBonus=lastWasValid&&addedCount>0;
+    const _isShorteningChain=_removingLetter&&lastWasValid&&_lastScoredWord.includes(w)&&_lastScoredWord!==w;
+    const isChainBonus=(lastWasValid&&addedCount>0)||_isShorteningChain;
     const lengthBonus=w.length>9?6:w.length>6?2:0;
     const toughLetters=/[jxqz]/g;
     const toughCount=(w.match(toughLetters)||[]).length;
@@ -878,7 +880,7 @@ function autoCheck(){
     score+=points;
     document.getElementById("score-value").textContent=score;
     updateRankDisplay();
-    used.add(w);z.classList.add("correct");lastWasValid=true;
+    used.add(w);z.classList.add("correct");lastWasValid=true;_lastScoredWord=w;
       const _wd=document.getElementById("word-display");if(_wd){_wd.className="success";setTimeout(()=>{if(_wd)_wd.className="";},600);}
     if(isChainBonus){
       chain++;updateChainDisplay();
@@ -886,7 +888,7 @@ function autoCheck(){
       cd.classList.remove("bump");
       void cd.offsetWidth;
       cd.classList.add("bump");
-      showHint("+"+points+(points>1?" points":" point")+" \u2014 \""+w+"\""+(lengthBonus>0?(w.length>9?" \u26A1+3 long!":" \u2B50+1 long!"):"")+(toughBonus>0?" \uD83D\uDD25+"+toughBonus+" tough":""),"success");
+      showHint("+"+points+(points>1?" points":" point")+" \u2014 \""+w+"\""+(lengthBonus>0?(w.length>9?" \u26A1+6 long!":" \u2B50+2 long!"):"")+(toughBonus>0?" \uD83D\uDD25+"+toughBonus+" tough":""),"success");
       addPill(w,true);
       if(w.length>=7){
         setTimeout(()=>{launchFish(z);},80);
@@ -897,7 +899,7 @@ function autoCheck(){
       z.animate([{transform:"scale(1)"},{transform:"scale(1.03)"},{transform:"scale(1)"}],{duration:300});
     }else{
       chain=1;updateChainDisplay();
-      const lenMsg=w.length>9?" \u26A1+3 long word!":w.length>6?" \u2B50+1 long word!":"";
+      const lenMsg=w.length>9?" \u26A1+6 long word!":w.length>6?" \u2B50+2 long word!":"";
       const toughMsg=toughBonus>0?" \uD83D\uDD25+"+toughBonus+" tough letter"+(toughBonus>3?"s":"")+"!":"";
       showHint("+"+points+(points>1?" points":" point")+" \u2014 \""+w+"\""+lenMsg+toughMsg,"success");
       addPill(w,false);
@@ -989,8 +991,11 @@ function renderWord(){
         letters.splice(i,1);
         isBase.splice(i,1);
         isLocked.splice(i,1);
-        chain=0;lastWasValid=false;updateChainDisplay();
+        // Don't reset chain here — let autoCheck determine if the new word is valid
+        // and handle chain logic accordingly
+        _removingLetter=true;
         renderWord();autoCheck();
+        _removingLetter=false;
       });
     }
     z.appendChild(t);
@@ -1063,7 +1068,7 @@ function touch(el,info){
     } else if(di&&di.src==="tile"){
       // Dropped outside word zone — remove the letter
       letters.splice(di.idx,1);isBase.splice(di.idx,1);isLocked.splice(di.idx,1);
-      di=null;chain=0;lastWasValid=false;updateChainDisplay();renderWord();autoCheck();
+      di=null;chain=0;lastWasValid=false;_lastScoredWord='';updateChainDisplay();renderWord();autoCheck();
     } else {
       di=null;
     }
@@ -1082,7 +1087,7 @@ function dragTile(el,letter,idx){
       const x=e.clientX,y=e.clientY;
       if(x<r.left||x>r.right||y<r.top||y>r.bottom){
         letters.splice(di.idx,1);isBase.splice(di.idx,1);isLocked.splice(di.idx,1);
-        di=null;chain=0;lastWasValid=false;updateChainDisplay();renderWord();autoCheck();
+        di=null;chain=0;lastWasValid=false;_lastScoredWord='';updateChainDisplay();renderWord();autoCheck();
       }
     }
   });
@@ -1643,7 +1648,7 @@ async function newGame(){
     _dailyParScore = Math.min(500, Math.round(wCount * 2));
   }
 
-  used=new Set();score=0;chain=0;lastWasValid=false;addedCount=0;
+  used=new Set();score=0;chain=0;lastWasValid=false;addedCount=0;_lastScoredWord="";
   document.getElementById("score-value").textContent="0";
   document.getElementById("used-words").innerHTML="";
   document.getElementById("word-zone").classList.remove("correct","broken");
