@@ -68,6 +68,20 @@ html{overscroll-behavior:none}
 .rank-popup-row.diamond-row .rank-popup-pts{color:#85C1E9}
 #game-over-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center}
 #game-over-overlay.show{display:flex}
+#diamond-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1001;align-items:center;justify-content:center}
+#diamond-overlay.show{display:flex}
+#diamond-box{background:#0E1C2A;border:2px solid #85C1E9;border-radius:16px;padding:2rem 1.5rem;max-width:320px;width:90%;text-align:center;box-shadow:0 0 40px rgba(133,193,233,0.2)}
+#diamond-box .d-gem{font-size:3rem;margin-bottom:0.5rem;animation:gemPulse 1.5s ease-in-out infinite}
+@keyframes gemPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 6px rgba(133,193,233,0.6))}50%{transform:scale(1.12);filter:drop-shadow(0 0 16px rgba(133,193,233,0.9))}}
+#diamond-box h2{font-size:1.4rem;font-weight:800;color:#85C1E9;margin-bottom:0.25rem;letter-spacing:-0.5px}
+#diamond-box .d-sub{font-family:'Space Mono',monospace;font-size:0.75rem;color:#4A7A99;margin-bottom:1.5rem}
+#diamond-box .d-score{font-family:'Space Mono',monospace;font-size:2.2rem;font-weight:700;color:#fff;margin-bottom:0.25rem}
+#diamond-box .d-score-label{font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:#4A7A99;text-transform:uppercase;margin-bottom:1.5rem}
+.d-btn{display:block;width:100%;padding:0.75rem;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:0.75rem;transition:all 0.15s}
+.d-btn-finish{background:#2980B9;color:#fff}
+.d-btn-finish:hover{background:#3498DB}
+.d-btn-keep{background:transparent;color:#4A7A99;border:1px solid #1B3A4B;margin-bottom:0}
+.d-btn-keep:hover{color:#85C1E9;border-color:#2980B9}
 #game-over-box{background:#0E1C2A;border:2px solid #2980B9;border-radius:16px;padding:2rem 2.5rem;text-align:center;max-width:320px;width:90%;animation:popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275)}
 @keyframes popIn{0%{transform:scale(0.6);opacity:0}100%{transform:scale(1);opacity:1}}
 #game-over-title{font-size:18px;font-weight:800;color:#85C1E9;margin-bottom:0.75rem;letter-spacing:-0.5px;white-space:normal;word-break:break-word}
@@ -880,6 +894,16 @@ function autoCheck(){
     score+=points;
     document.getElementById("score-value").textContent=score;
     updateRankDisplay();
+    // Check for Diamond rank — show celebration overlay with choice to finish or keep playing
+    const _diamondThreshold = Math.ceil(_dailyParScore * RANKS[RANKS.length-1].pct);
+    if(score >= _diamondThreshold && gameActive){
+      used.add(w);lastWasValid=true;_lastScoredWord=w;
+      addPill(w, isChainBonus);
+      if(isChainBonus){ chain++;updateChainDisplay(); }
+      document.getElementById('diamond-score').textContent = score;
+      setTimeout(()=>{ document.getElementById('diamond-overlay').classList.add('show'); }, 600);
+      return;
+    }
     used.add(w);z.classList.add("correct");lastWasValid=true;_lastScoredWord=w;
       const _wd=document.getElementById("word-display");if(_wd){_wd.className="success";setTimeout(()=>{if(_wd)_wd.className="";},600);}
     if(isChainBonus){
@@ -1932,7 +1956,11 @@ endGame=function(){
   _origEndGame();
   // Set end-screen title based on mode
   const titleEl = document.getElementById('game-over-title');
-  if(titleEl) titleEl.textContent = GAME_MODE === "unlimited" ? "Nice work! 💧" : "Time's Up!";
+  if(titleEl){
+    const _finalRank = getCurrentRank(score);
+    const _isDiamond = _finalRank && _finalRank.key === 'diamond';
+    titleEl.textContent = _isDiamond ? "💎 Diamond rank!" : (GAME_MODE === "unlimited" ? "Nice work! 💧" : "Time's Up!");
+  }
   checkMedalAndCelebrate(score);
   saveScore(score,base);
   // Firebase tracking — queue if module not ready
@@ -2051,6 +2079,21 @@ document.addEventListener('touchmove', e=>{
   }
 },{passive:false});
 </script>
+<div id="diamond-overlay">
+  <div id="diamond-box">
+    <div class="d-gem">💎</div>
+    <h2>Diamond Rank!</h2>
+    <div class="d-sub">You've reached the top</div>
+    <div class="d-score" id="diamond-score">0</div>
+    <div class="d-score-label">points</div>
+    <button class="d-btn d-btn-finish" onclick="document.getElementById('diamond-overlay').classList.remove('show');finishGame();">
+      ✓ Finish &amp; see results
+    </button>
+    <button class="d-btn d-btn-keep" onclick="document.getElementById('diamond-overlay').classList.remove('show');">
+      Keep playing
+    </button>
+  </div>
+</div>
 <div id="rank-popup"></div>
 </body>
 </html>
