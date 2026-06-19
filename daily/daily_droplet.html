@@ -776,11 +776,11 @@ function updateChainDisplay(){
 
 // ── Rank system ──────────────────────────────────────────────
 const RANKS=[
-  {key:'iron',    label:'⚪ Iron',    pct:0.05},
-  {key:'bronze',  label:'🥉 Bronze',  pct:0.125},
-  {key:'silver',  label:'🥈 Silver',  pct:0.25},
-  {key:'gold',    label:'🥇 Gold',    pct:0.30},
-  {key:'diamond', label:'💎 Diamond', pct:0.35},
+  {key:'iron',    label:'⚪ Iron',    pct:0.055},
+  {key:'bronze',  label:'🥉 Bronze',  pct:0.1375},
+  {key:'silver',  label:'🥈 Silver',  pct:0.275},
+  {key:'gold',    label:'🥇 Gold',    pct:0.33},
+  {key:'diamond', label:'💎 Diamond', pct:0.385},
 ];
 function getCurrentRank(s){
   if(!_dailyParScore||s<=0) return null;
@@ -1669,7 +1669,7 @@ async function newGame(){
       }
       if(pos === bl.length) wCount++;
     }
-    _dailyParScore = Math.round(Math.sqrt(wCount) * 8);
+    _dailyParScore = Math.min(800, Math.max(300, Math.round(500 * (wCount / 1500))));
   }
 
   used=new Set();score=0;chain=0;lastWasValid=false;addedCount=0;_lastScoredWord="";
