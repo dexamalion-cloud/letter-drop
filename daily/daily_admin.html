@@ -1190,7 +1190,7 @@ window.savePuzzle = async function() {
   btn.textContent = '⏳ Saving…';
 
   try {
-    const parScore = W ? Math.min(500, Math.round(countPotential([c1,v,c2]) * 2)) : 0;
+    const parScore = W ? Math.round(Math.sqrt(countPotential([c1,v,c2])) * 8) : 0;
     await setDoc(doc(db, 'daily_puzzles', selectedDate), {
       letters,
       puzzleNumber: getPuzzleNumber(selectedDate),
@@ -1288,11 +1288,11 @@ window.bulkGenerate = async function() {
       await setDoc(doc(db, 'daily_puzzles', dateKey), {
         letters,
         puzzleNumber: getPuzzleNumber(dateKey),
-        parScore: Math.min(500, Math.round(count * 2)),
+        parScore: Math.round(Math.sqrt(count) * 8),
         dateKey,
         updatedAt: serverTimestamp()
       });
-      puzzleCache[dateKey] = { letters, parScore: Math.min(500, Math.round(count * 2)) };
+      puzzleCache[dateKey] = { letters, parScore: Math.round(Math.sqrt(count) * 8) };
       saved++;
       addLog(log, 'ok', `${dateKey}  ⟶  ${letters}  (${count.toLocaleString()} words)`);
     } catch(e) {

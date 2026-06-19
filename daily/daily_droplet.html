@@ -1656,7 +1656,7 @@ async function newGame(){
 
   // Set par score: use Firebase value if available, else calculate inline
   if(fetchedParScore && fetchedParScore > 0){
-    _dailyParScore = Math.min(500, fetchedParScore);
+    _dailyParScore = fetchedParScore; // already calculated with sqrt formula in admin
   } else {
     // Fallback: count potential words inline (synchronous, not using the deferred countPotential)
     const bl = base.map(l=>l.toLowerCase());
@@ -1669,7 +1669,7 @@ async function newGame(){
       }
       if(pos === bl.length) wCount++;
     }
-    _dailyParScore = Math.min(500, Math.round(wCount * 2));
+    _dailyParScore = Math.round(Math.sqrt(wCount) * 8);
   }
 
   used=new Set();score=0;chain=0;lastWasValid=false;addedCount=0;_lastScoredWord="";
