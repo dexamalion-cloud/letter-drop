@@ -561,6 +561,95 @@
   }
   .empty-state .emoji { font-size: 2rem; margin-bottom: 0.75rem; }
 
+  /* ── Stats panel ─────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+  .stat-card-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+  .stat-card-value {
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ice);
+    line-height: 1;
+  }
+  .stat-card-sub {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+  .stats-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+  .stats-section h3 {
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .rank-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.8rem;
+  }
+  .rank-bar-label { width: 80px; color: var(--text); font-family: var(--mono); font-size: 0.72rem; }
+  .rank-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .rank-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--steel);
+    transition: width 0.6s ease;
+  }
+  .rank-bar-fill.iron    { background: #8B9EC4; }
+  .rank-bar-fill.bronze  { background: #CD7F32; }
+  .rank-bar-fill.silver  { background: #A8C0CC; }
+  .rank-bar-fill.gold    { background: #F1C40F; }
+  .rank-bar-fill.diamond { background: #85C1E9; }
+  .rank-bar-count { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); width: 40px; text-align: right; }
+  .puzzle-perf-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .puzzle-perf-table th {
+    text-align: left; font-family: var(--mono); font-size: 0.62rem;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
+    padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border);
+  }
+  .puzzle-perf-table td { padding: 0.5rem 0.5rem; border-bottom: 1px solid rgba(27,58,75,0.4); }
+  .puzzle-perf-table tr:hover td { background: var(--surf2); }
+  .stats-controls { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .stats-controls select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.5rem 0.75rem; color: var(--ice); font-family: var(--mono);
+    font-size: 0.8rem; outline: none; color-scheme: dark;
+  }
+
   /* ── Toast ───────────────────────────────────────── */
   #toast {
     position: fixed;
@@ -649,6 +738,7 @@
   <nav>
     <button class="active" data-panel="puzzles" onclick="switchPanel(this)">Puzzles</button>
     <button data-panel="leaderboard" onclick="switchPanel(this)">Leaderboard</button>
+    <button data-panel="stats" onclick="switchPanel(this)">Stats</button>
   </nav>
   <div class="dict-status">
     <div class="dict-dot" id="dict-dot"></div>
@@ -804,6 +894,72 @@
           Select a date to load the leaderboard
         </div>
       </div>
+    </div>
+
+    <!-- Panel: Stats -->
+    <div class="panel-section" id="panel-stats">
+
+      <div class="section-header">
+        <h2>Performance Stats</h2>
+        <span class="date-label" id="stats-period-label"></span>
+      </div>
+
+      <div class="stats-controls">
+        <select id="stats-month-select" onchange="loadStats()"></select>
+        <button class="btn btn-secondary" onclick="loadStats()">↻ Refresh</button>
+        <span style="font-family:var(--mono);font-size:0.72rem;color:var(--muted)" id="stats-loading"></span>
+      </div>
+
+      <!-- Top KPIs -->
+      <div class="stats-grid" id="stats-kpis">
+        <div class="stat-card">
+          <div class="stat-card-label">DAU (Today)</div>
+          <div class="stat-card-value" id="stat-dau">—</div>
+          <div class="stat-card-sub">unique players today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">MAU (This Month)</div>
+          <div class="stat-card-value" id="stat-mau">—</div>
+          <div class="stat-card-sub">unique players this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Total Plays</div>
+          <div class="stat-card-value" id="stat-total-plays">—</div>
+          <div class="stat-card-sub">games completed this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Avg Score</div>
+          <div class="stat-card-value" id="stat-avg-score">—</div>
+          <div class="stat-card-sub">across all games this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Avg Words</div>
+          <div class="stat-card-value" id="stat-avg-words">—</div>
+          <div class="stat-card-sub">words scored per game</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Top Score Ever</div>
+          <div class="stat-card-value" id="stat-top-score">—</div>
+          <div class="stat-card-sub" id="stat-top-score-sub">this month</div>
+        </div>
+      </div>
+
+      <!-- Rank distribution -->
+      <div class="stats-section">
+        <h3>Rank Distribution (this month)</h3>
+        <div id="rank-distribution">
+          <div class="empty-state" style="padding:1.5rem 0"><div class="spinner" style="margin:0 auto;width:20px;height:20px;border-width:2px"></div></div>
+        </div>
+      </div>
+
+      <!-- Per-puzzle performance -->
+      <div class="stats-section">
+        <h3>Per-Puzzle Performance (this month)</h3>
+        <div id="puzzle-perf-wrap">
+          <div class="empty-state" style="padding:1.5rem 0">Loading…</div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -1449,6 +1605,185 @@ window.deleteScore = async function(dateKey, uid) {
 };
 
 // ── Panel switching ───────────────────────────────────────────
+// ── Stats panel ───────────────────────────────────────────────
+const RANK_DEFS = [
+  {key:'iron',    label:'⚪ Iron',    pct:0.055},
+  {key:'bronze',  label:'🥉 Bronze',  pct:0.1375},
+  {key:'silver',  label:'🥈 Silver',  pct:0.275},
+  {key:'gold',    label:'🥇 Gold',    pct:0.33},
+  {key:'diamond', label:'💎 Diamond', pct:0.385},
+];
+
+function populateMonthSelect() {
+  const sel = document.getElementById('stats-month-select');
+  if (!sel || sel.options.length > 0) return;
+  const now = new Date();
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString('en-AU', {month:'long', year:'numeric'});
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    sel.appendChild(opt);
+  }
+}
+
+function getRankForScore(score, parScore) {
+  if (!parScore || score <= 0) return null;
+  let rank = null;
+  for (const r of RANK_DEFS) { if (score >= parScore * r.pct) rank = r; }
+  return rank;
+}
+
+window.loadStats = async function() {
+  populateMonthSelect();
+  const sel = document.getElementById('stats-month-select');
+  const month = sel.value; // YYYY-MM
+  const [year, mon] = month.split('-').map(Number);
+  const today = getUTCDateKey();
+  const loadingEl = document.getElementById('stats-loading');
+  if (loadingEl) loadingEl.textContent = 'Loading…';
+
+  document.getElementById('stats-period-label').textContent =
+    new Date(year, mon-1, 1).toLocaleDateString('en-AU', {month:'long', year:'numeric'});
+
+  try {
+    // Fetch all games for this month
+    const startDate = `${month}-01`;
+    const endDate = `${month}-${String(new Date(year, mon, 0).getDate()).padStart(2,'0')}`;
+
+    const q = query(
+      collection(db, 'daily_games'),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
+      limit(2000)
+    );
+    const snap = await getDocs(q);
+    const games = snap.docs.map(d => d.data());
+
+    // Also fetch puzzle parScores for rank calculation
+    const dateSet = [...new Set(games.map(g => g.date))];
+    const parScores = {};
+    await Promise.all(dateSet.map(async date => {
+      if (puzzleCache[date] && puzzleCache[date].parScore) {
+        parScores[date] = puzzleCache[date].parScore;
+      } else {
+        try {
+          const psnap = await getDoc(doc(db, 'daily_puzzles', date));
+          if (psnap.exists()) parScores[date] = psnap.data().parScore || 0;
+        } catch(e) {}
+      }
+    }));
+
+    // DAU
+    const todayGames = games.filter(g => g.date === today);
+    document.getElementById('stat-dau').textContent = todayGames.length;
+
+    // MAU — unique UIDs this month
+    const uniqueUIDs = new Set(games.map(g => g.uid).filter(Boolean));
+    document.getElementById('stat-mau').textContent = uniqueUIDs.size;
+
+    // Total plays
+    document.getElementById('stat-total-plays').textContent = games.length;
+
+    // Avg score
+    const scores = games.map(g => g.score || 0).filter(s => s > 0);
+    const avgScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+    document.getElementById('stat-avg-score').textContent = avgScore || '—';
+
+    // Avg words
+    const wordCounts = games.map(g => g.wordsScored || 0).filter(w => w > 0);
+    const avgWords = wordCounts.length ? Math.round(wordCounts.reduce((a,b)=>a+b,0)/wordCounts.length) : 0;
+    document.getElementById('stat-avg-words').textContent = avgWords || '—';
+
+    // Top score
+    const topScore = scores.length ? Math.max(...scores) : 0;
+    const topGame = games.find(g => g.score === topScore);
+    document.getElementById('stat-top-score').textContent = topScore || '—';
+    if (topGame) document.getElementById('stat-top-score-sub').textContent =
+      `on ${topGame.date} · ${(topGame.uid||'').slice(0,6)}…`;
+
+    // Rank distribution
+    const rankCounts = {iron:0, bronze:0, silver:0, gold:0, diamond:0, none:0};
+    for (const g of games) {
+      const par = parScores[g.date] || 0;
+      const r = getRankForScore(g.score || 0, par);
+      if (r) rankCounts[r.key]++;
+      else rankCounts.none++;
+    }
+    const totalRanked = games.length;
+    const rankDiv = document.getElementById('rank-distribution');
+    rankDiv.innerHTML = '';
+    const rankRows = [
+      {key:'diamond', label:'💎 Diamond'},
+      {key:'gold',    label:'🥇 Gold'},
+      {key:'silver',  label:'🥈 Silver'},
+      {key:'bronze',  label:'🥉 Bronze'},
+      {key:'iron',    label:'⚪ Iron'},
+      {key:'none',    label:'No rank'},
+    ];
+    for (const {key, label} of rankRows) {
+      const n = rankCounts[key] || 0;
+      const pct = totalRanked ? Math.round(n/totalRanked*100) : 0;
+      rankDiv.innerHTML += `
+        <div class="rank-bar-row">
+          <span class="rank-bar-label">${label}</span>
+          <div class="rank-bar-track">
+            <div class="rank-bar-fill ${key}" style="width:${pct}%"></div>
+          </div>
+          <span class="rank-bar-count">${n} <span style="color:var(--border)">(${pct}%)</span></span>
+        </div>`;
+    }
+
+    // Per-puzzle performance table
+    const byDate = {};
+    for (const g of games) {
+      if (!byDate[g.date]) byDate[g.date] = {scores:[], words:[], date:g.date};
+      byDate[g.date].scores.push(g.score || 0);
+      byDate[g.date].words.push(g.wordsScored || 0);
+    }
+    const rows = Object.values(byDate).sort((a,b) => b.date.localeCompare(a.date));
+    const wrap = document.getElementById('puzzle-perf-wrap');
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="empty-state" style="padding:1.5rem 0">No data for this period</div>';
+    } else {
+      let html = `<table class="puzzle-perf-table">
+        <thead><tr>
+          <th>Date</th><th>Letters</th><th>#</th><th>Players</th>
+          <th>Avg Score</th><th>Top Score</th><th>Avg Words</th><th>💎 Rate</th>
+        </tr></thead><tbody>`;
+      for (const row of rows) {
+        const avg = Math.round(row.scores.reduce((a,b)=>a+b,0)/row.scores.length);
+        const top = Math.max(...row.scores);
+        const avgW = Math.round(row.words.reduce((a,b)=>a+b,0)/row.words.length);
+        const par = parScores[row.date] || 0;
+        const diamondThreshold = par ? Math.ceil(par * 0.385) : 0;
+        const diamondCount = par ? row.scores.filter(s => s >= diamondThreshold).length : 0;
+        const diamondRate = par ? Math.round(diamondCount/row.scores.length*100) : '—';
+        const letters = puzzleCache[row.date]?.letters || '—';
+        const puzNum = getPuzzleNumber(row.date);
+        html += `<tr>
+          <td style="font-family:var(--mono);font-size:0.72rem;color:var(--muted)">${row.date}</td>
+          <td style="font-family:var(--mono);font-weight:700;color:var(--ice)">${letters}</td>
+          <td style="font-family:var(--mono);font-size:0.72rem;color:var(--muted)">#${puzNum}</td>
+          <td style="font-family:var(--mono)">${row.scores.length}</td>
+          <td style="font-family:var(--mono)">${avg}</td>
+          <td style="font-family:var(--mono);color:var(--ice);font-weight:700">${top}</td>
+          <td style="font-family:var(--mono)">${avgW}</td>
+          <td style="font-family:var(--mono);color:${diamondRate>=50?'var(--teal)':'var(--muted)'}">${typeof diamondRate==='number'?diamondRate+'%':diamondRate}</td>
+        </tr>`;
+      }
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    if (loadingEl) loadingEl.textContent = `${games.length} games loaded`;
+  } catch(e) {
+    if (loadingEl) loadingEl.textContent = 'Error: ' + e.message;
+    console.error('Stats error:', e);
+  }
+};
+
 window.switchPanel = function(btn) {
   document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -1461,6 +1796,7 @@ function switchPanelById(id) {
     b.classList.toggle('active', b.dataset.panel === id);
   });
   if (id === 'leaderboard') loadLeaderboard();
+  if (id === 'stats') { populateMonthSelect(); loadStats(); }
 }
 
 // ── Feedback / Toast ──────────────────────────────────────────
