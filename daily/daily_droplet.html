@@ -161,7 +161,8 @@ html{overscroll-behavior:none}
 .action-btn.danger:hover{background:#0E1C2A}
 #kbd-label{font-size:11px;color:#2980B9;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:0.75rem;margin-top:0.5rem}
 .kbd-row{display:flex;justify-content:center;gap:4px;margin-bottom:4px}
-.key{width:34px;height:40px;background:#1B3A4B;border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Space Mono',monospace;cursor:grab;user-select:none;transition:transform 0.12s,background 0.12s;flex-shrink:0;color:#fff;text-transform:uppercase}
+.key{width:34px;height:40px;background:#1B3A4B;border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Space Mono',monospace;cursor:grab;user-select:none;transition:transform 0.12s,background 0.12s,opacity 0.4s;flex-shrink:0;color:#fff;text-transform:uppercase}
+.key.key-unused{opacity:0.1;cursor:default}
 .key.wide{width:50px;font-size:11px}
 .key:hover{transform:translateY(-3px);background:#2980B9}
 .key.dragging{opacity:0.5;transform:scale(0.9)}
@@ -1335,6 +1336,7 @@ function calcPotentialWords(baseLetters){
     results.sort((a,b)=>a.length-b.length||a.localeCompare(b));
     potentialWords=results;
     potentialCalcDone=true;
+    dimUnusedKeys();
   },100);
 }
 
@@ -1480,6 +1482,26 @@ function playBeep(){
     osc.start(t);
     osc.stop(t + 0.12);
   } catch(e){}
+}
+
+function dimUnusedKeys(){
+  if(!potentialCalcDone||!potentialWords.length) return;
+  // Collect every letter that appears in at least one valid word
+  const usedLetters=new Set();
+  for(const word of potentialWords){
+    for(const ch of word) usedLetters.add(ch.toUpperCase());
+  }
+  // QU counts if either Q or U appears
+  if(usedLetters.has('Q')||usedLetters.has('U')) usedLetters.add('QU');
+  // Apply/remove class to each key
+  document.querySelectorAll('.key').forEach(k=>{
+    const letter=k.textContent.trim().toUpperCase();
+    if(!usedLetters.has(letter)){
+      k.classList.add('key-unused');
+    } else {
+      k.classList.remove('key-unused');
+    }
+  });
 }
 
 function buildKeyboard(){
@@ -1677,6 +1699,8 @@ async function newGame(){
   document.getElementById("used-words").innerHTML="";
   document.getElementById("word-zone").classList.remove("correct","broken");
   const _rd=document.getElementById('rank-display');if(_rd){_rd.textContent='';_rd.className='';}
+  // Reset key dimming until new potential words are calculated
+  document.querySelectorAll('.key').forEach(k=>k.classList.remove('key-unused'));
 
   if(GAME_MODE === "unlimited"){
     // Unlimited mode: hide timer label and 1:30 display, show only the puzzle date
