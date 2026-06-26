@@ -897,11 +897,12 @@ function autoCheck(){
     updateRankDisplay();
     // Check for Diamond rank — show celebration overlay with choice to finish or keep playing
     const _diamondThreshold = Math.ceil(_dailyParScore * RANKS[RANKS.length-1].pct);
-    if(score >= _diamondThreshold && gameActive){
+    if(score >= _diamondThreshold && gameActive && !_diamondShown){
       used.add(w);lastWasValid=true;_lastScoredWord=w;
       addPill(w, isChainBonus);
       if(isChainBonus){ chain++;updateChainDisplay(); }
       document.getElementById('diamond-score').textContent = score;
+      _diamondShown = true;
       setTimeout(()=>{ document.getElementById('diamond-overlay').classList.add('show'); }, 600);
       return;
     }
@@ -1644,6 +1645,7 @@ async function showAlreadyPlayed(prior){
 async function newGame(){
   if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
   _autoSaveDone = false; // reset auto-save flag for new session
+  _diamondShown = false; // reset diamond overlay flag for new session
   // Clear any prior overlay
   document.getElementById("game-over-overlay").classList.remove("show");
   const _mm=document.getElementById("medal-msg");if(_mm){_mm.textContent="";_mm.className="";}
@@ -1760,6 +1762,7 @@ function finishGame(){
 // ── Auto-save on close/navigate away (unlimited mode) ────────
 // Uses both beforeunload and visibilitychange for maximum coverage.
 let _autoSaveDone = false;
+let _diamondShown = false;
 function _autoSave(){
   if(!gameActive || _autoSaveDone || GAME_MODE !== "unlimited") return;
   if(!_dailyDateKey || score === 0) return; // nothing worth saving
